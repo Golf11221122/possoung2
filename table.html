@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>เลือกโต๊ะ</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to bottom right, #FFA500, #FFFFFF);
+      color: #002366;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      height: 100vh;
+    }
+
+    h1 {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: linear-gradient(to right, #FFA500, #FFFFFF);
+      color: #002366;
+      border-radius: 10px;
+      font-size: 2rem;
+    }
+
+    .table-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 20px;
+      padding: 30px;
+      width: 100%;
+      max-width: 800px;
+      justify-items: center;
+    }
+
+    .table-button {
+      background-color: #eee;
+      color: #002366;
+      border: 2px solid #ccc;
+      border-radius: 20px;
+      width: 120px;
+      height: 120px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .table-button.selected {
+      background-color: orange;
+      color: white;
+      border-color: darkorange;
+    }
+
+    .footer-buttons {
+      position: fixed;
+      bottom: 20px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 20px;
+    }
+
+    .footer-buttons button {
+      padding: 14px 24px;
+      font-size: 1.2rem;
+      border-radius: 10px;
+      border: none;
+      background-color: #ffffffcc;
+      color: #002366;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      cursor: pointer;
+    }
+
+    #popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      display: none;
+      z-index: 1000;
+      width: 320px;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    #popup-header {
+      background: linear-gradient(to right, #FFA500, #FFFFFF);
+      padding: 15px;
+      font-size: 1.5rem;
+      color: #002366;
+      font-weight: bold;
+    }
+
+    #customerCount {
+      font-size: 2rem;
+      margin: 20px 0;
+      letter-spacing: 10px;
+      min-height: 40px;
+    }
+
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      padding: 10px 20px;
+    }
+
+    .keypad button {
+      padding: 20px;
+      font-size: 1.5rem;
+      border-radius: 15px;
+      border: none;
+      background: #f0f0f0;
+      color: #002366;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .keypad button:hover {
+      background: #fff;
+    }
+
+    #startOrderBtn {
+      width: 100%;
+      background: linear-gradient(to right, #ccffcc, #ffffff);
+      color: orange;
+      border: none;
+      border-radius: 0 0 20px 20px;
+      padding: 15px;
+      font-size: 1.3rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #startOrderBtn:hover {
+      background: linear-gradient(to right, #b3ffb3, #ffffff);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>กรุณาเลือกโต๊ะ</h1>
+
+  <div class="table-grid" id="tableContainer"></div>
+
+  <div class="footer-buttons">
+    <button onclick="playClick(); goHome()">Back to Home Page</button>
+    <button onclick="playClick(); goBack()">Back</button>
+  </div>
+
+  <!-- POPUP -->
+  <div id="popup">
+    <div id="popup-header">จำนวนลูกค้า</div>
+    <div id="customerCount"></div>
+    <div class="keypad">
+      <button onclick="playClick(); appendDigit('1')">1</button>
+      <button onclick="playClick(); appendDigit('2')">2</button>
+      <button onclick="playClick(); appendDigit('3')">3</button>
+      <button onclick="playClick(); appendDigit('4')">4</button>
+      <button onclick="playClick(); appendDigit('5')">5</button>
+      <button onclick="playClick(); appendDigit('6')">6</button>
+      <button onclick="playClick(); appendDigit('7')">7</button>
+      <button onclick="playClick(); appendDigit('8')">8</button>
+      <button onclick="playClick(); appendDigit('9')">9</button>
+      <button onclick="playClick(); clearCount()">ยกเลิก</button>
+      <button onclick="playClick(); appendDigit('0')">0</button>
+      <button onclick="playClick(); backspace()">X</button>
+    </div>
+    <button id="startOrderBtn" onclick="playClick(); startOrder()">เริ่มสั่งอาหาร +</button>
+  </div>
+
+  <script>
+    let selectedTable = "";
+    let customerCount = "";
+
+    const tableContainer = document.getElementById("tableContainer");
+    const customerCountEl = document.getElementById("customerCount");
+    const popup = document.getElementById("popup");
+
+    function renderTables() {
+      for (let i = 1; i <= 15; i++) {
+        const btn = document.createElement("button");
+        btn.className = "table-button";
+        btn.innerText = `โต๊ะ ${i}`;
+        btn.onclick = function () {
+          playClick(); // ✅ เพิ่มเสียงคลิก
+          document.querySelectorAll('.table-button').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          selectedTable = i;
+          customerCount = "";
+          customerCountEl.innerText = "";
+          popup.style.display = 'block';
+        };
+        tableContainer.appendChild(btn);
+      }
+    }
+
+    function appendDigit(digit) {
+      if (customerCount.length < 3) {
+        customerCount += digit;
+        customerCountEl.innerText = customerCount;
+      }
+    }
+
+    function backspace() {
+      customerCount = customerCount.slice(0, -1);
+      customerCountEl.innerText = customerCount;
+    }
+
+    function clearCount() {
+      customerCount = "";
+      customerCountEl.innerText = "";
+    }
+
+    function startOrder() {
+      if (customerCount === "") {
+        playError();
+        alert("กรุณากรอกจำนวนลูกค้า");
+        return;
+      }
+      popup.style.display = "none";
+      window.location.href = "ordermenu.html";
+    }
+
+    function goHome() {
+      window.location.href = "index.html";
+    }
+
+    function goBack() {
+      window.history.back();
+    }
+
+    // Auto return after 5 min inactivity
+    let timeout;
+    function resetTimer() {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        window.location.href = "index.html";
+      }, 5 * 60 * 1000);
+    }
+
+    window.onload = () => {
+      resetTimer();
+      renderTables();
+    };
+    window.onmousemove = resetTimer;
+    window.onkeydown = resetTimer;
+  </script>
+
+  <script>
+    let audioCtx;
+    function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    function playClick() {
+      initAudio();
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.connect(g);
+      g.connect(audioCtx.destination);
+      o.type = "square";
+      o.frequency.setValueAtTime(550, audioCtx.currentTime);
+      g.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      o.start();
+      o.stop(audioCtx.currentTime + 0.1);
+      if (navigator.vibrate) navigator.vibrate(40);
+    }
+
+    function playError() {
+      initAudio();
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.connect(g);
+      g.connect(audioCtx.destination);
+      o.type = "sawtooth";
+      o.frequency.setValueAtTime(200, audioCtx.currentTime);
+      g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      o.start();
+      o.stop(audioCtx.currentTime + 0.25);
+      if (navigator.vibrate) navigator.vibrate([100, 60, 100]);
+    }
+
+    // ✅ ทำให้ Chrome ปลดล็อกเสียงเมื่อผู้ใช้คลิกครั้งแรก
+    document.addEventListener("click", () => {
+      if (audioCtx && audioCtx.state === "suspended") {
+        audioCtx.resume();
+      } else if (!audioCtx) {
+        initAudio();
+      }
+    }, { once: true });
+
+    // เสียงตอนกด alert
+    const _alert = window.alert;
+    window.alert = function(msg) {
+      playError();
+      _alert(msg);
+    };
+  </script>
+
+</body>
+</html>

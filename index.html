@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JOKJUNG POS - Login</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to bottom right, #FFA500, #FFFFFF);
+      color: #002366;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2em;
+      margin-bottom: 0.5em;
+    }
+
+    #datetime {
+      font-size: 1.2em;
+      margin-bottom: 1em;
+      white-space: pre-line;
+    }
+
+    #storeName {
+      font-size: 3em;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    #pinDisplay {
+      font-size: 2em;
+      letter-spacing: 10px;
+      margin-bottom: 20px;
+      min-height: 40px;
+    }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      max-width: 300px;
+      margin: auto;
+    }
+
+    .btn {
+      padding: 20px;
+      font-size: 1.5em;
+      border: none;
+      border-radius: 20px;
+      background-color: #ffffffcc;
+      color: #002366;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .btn:hover {
+      background-color: #fff;
+      transform: scale(1.05);
+    }
+
+    @media screen and (max-width: 500px) {
+      #storeName { font-size: 2em; }
+      .btn { padding: 15px; font-size: 1.2em; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Welcome Happy to day</h1>
+  <div id="datetime"></div>
+  <div id="storeName">JOKJUNG</div>
+
+  <div id="pinDisplay"></div>
+
+  <div class="button-grid">
+    <button class="btn" onclick="appendNumber('1')">1</button>
+    <button class="btn" onclick="appendNumber('2')">2</button>
+    <button class="btn" onclick="appendNumber('3')">3</button>
+    <button class="btn" onclick="appendNumber('4')">4</button>
+    <button class="btn" onclick="appendNumber('5')">5</button>
+    <button class="btn" onclick="appendNumber('6')">6</button>
+    <button class="btn" onclick="appendNumber('7')">7</button>
+    <button class="btn" onclick="appendNumber('8')">8</button>
+    <button class="btn" onclick="appendNumber('9')">9</button>
+    <button class="btn" onclick="clearPin()">X</button>
+    <button class="btn" onclick="appendNumber('0')">0</button>
+    <button class="btn" onclick="login()">LOG IN</button>
+  </div>
+
+  <script>
+    let pin = "";
+
+    function appendNumber(num) {
+      if (pin.length < 6) {
+        pin += num;
+        document.getElementById("pinDisplay").innerText = "*".repeat(pin.length);
+      }
+    }
+
+    function clearPin() {
+      pin = "";
+      document.getElementById("pinDisplay").innerText = "";
+    }
+
+    function login() {
+      fetch("https://script.google.com/macros/s/AKfycbzY9gDX-lBW8lg9nAS5XJ40beHLLMki9UcPe9QyLPlir7Zl1v1bAzgxzyWCIBFBSDNm/exec", {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ pin: pin })
+      })
+      .then(() => {
+        // ✅ ไม่สามารถรู้ผลจาก server ได้ ให้เดาว่าถูก และไปหน้า menu
+        window.location.href = "./menu.html";
+      })
+      .catch(err => {
+        alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+        console.error(err);
+      });
+    }
+
+    function updateDateTime() {
+      const now = new Date();
+      const date = now.toLocaleDateString('th-TH', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+      });
+      const time = now.toLocaleTimeString('th-TH');
+      document.getElementById("datetime").innerText = `${date}\n${time}`;
+    }
+
+    setInterval(updateDateTime, 1000);
+    updateDateTime();
+  </script>
+
+
+<script>
+const clickSound = new AudioContext();
+function playClick(){
+  const o = clickSound.createOscillator();
+  const g = clickSound.createGain();
+  o.connect(g); g.connect(clickSound.destination);
+  o.type = "square"; o.frequency.setValueAtTime(600, clickSound.currentTime);
+  g.gain.setValueAtTime(0.05, clickSound.currentTime);
+  o.start(); o.stop(clickSound.currentTime + 0.1);
+  if (navigator.vibrate) navigator.vibrate(40);
+}
+function playError(){
+  const o = clickSound.createOscillator();
+  const g = clickSound.createGain();
+  o.connect(g); g.connect(clickSound.destination);
+  o.type = "sawtooth"; o.frequency.setValueAtTime(200, clickSound.currentTime);
+  g.gain.setValueAtTime(0.1, clickSound.currentTime);
+  o.start(); o.stop(clickSound.currentTime + 0.2);
+  if (navigator.vibrate) navigator.vibrate([100,60,100]);
+}
+document.addEventListener("DOMContentLoaded",()=>{
+  document.querySelectorAll('button,a').forEach(el=>{
+    el.addEventListener('click',playClick);
+  });
+});
+const _alert=window.alert;
+window.alert=function(msg){playError();_alert(msg);};
+</script>
+
+</body>
+</html>

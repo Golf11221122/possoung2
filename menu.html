@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>เลือกรูปแบบการสั่ง</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to bottom right, #FFA500, #FFFFFF);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+      color: #002366;
+    }
+
+    h1 {
+      margin-bottom: 30px;
+    }
+
+    .button {
+      padding: 25px 50px;
+      margin: 15px;
+      font-size: 2rem;
+      border-radius: 25px;
+      background-color: #ffffffcc;
+      color: #002366;
+      border: none;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .button:hover {
+      background-color: #fff;
+      transform: scale(1.05);
+    }
+
+    .footer-buttons {
+      position: fixed;
+      bottom: 20px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 20px;
+    }
+
+    .footer-buttons button {
+      padding: 14px 24px;
+      font-size: 1.2rem;
+      border-radius: 10px;
+      border: none;
+      background-color: #ffffffcc;
+      color: #002366;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      cursor: pointer;
+    }
+
+    /* Pop-up */
+    #popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+      width: 90%;
+      max-width: 350px;
+      z-index: 1000;
+      overflow: hidden;
+    }
+
+    #popupHeader {
+      background: linear-gradient(to right, #FFA500, #FFFFFF);
+      padding: 15px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #002366;
+      text-align: center;
+    }
+
+    #popupDisplay {
+      font-size: 2rem;
+      letter-spacing: 10px;
+      text-align: center;
+      padding: 10px 0;
+    }
+
+    .popup-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      padding: 15px;
+    }
+
+    .popup-grid button {
+      padding: 15px;
+      font-size: 1.3rem;
+      border: none;
+      border-radius: 12px;
+      background-color: #ffffffcc;
+      color: #002366;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      cursor: pointer;
+    }
+
+    .popup-grid button:hover {
+      background-color: #fff;
+    }
+
+    #popupFooter {
+      background: linear-gradient(to right, #ccffcc, #ffffff);
+      text-align: center;
+    }
+
+    #popupFooter button {
+      width: 100%;
+      padding: 15px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: orange;
+      border: none;
+      border-radius: 0 0 20px 20px;
+      background: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>เลือกรูปแบบการสั่ง</h1>
+  <button class="button" onclick="goToTable()">ทานที่ร้าน</button>
+  <button class="button" onclick="openPopup()">กลับบ้าน</button>
+
+  <!-- Footer Buttons -->
+  <div class="footer-buttons">
+    <button onclick="goHome()">Back to Home Page</button>
+    <button onclick="goBack()">Back</button>
+  </div>
+
+  <!-- Pop-up -->
+  <div id="popup">
+    <div id="popupHeader">จำนวนลูกค้า</div>
+    <div id="popupDisplay"></div>
+    <div class="popup-grid">
+      <button onclick="appendDigit('1')">1</button>
+      <button onclick="appendDigit('2')">2</button>
+      <button onclick="appendDigit('3')">3</button>
+      <button onclick="appendDigit('4')">4</button>
+      <button onclick="appendDigit('5')">5</button>
+      <button onclick="appendDigit('6')">6</button>
+      <button onclick="appendDigit('7')">7</button>
+      <button onclick="appendDigit('8')">8</button>
+      <button onclick="appendDigit('9')">9</button>
+      <button onclick="clearCount()">ยกเลิก</button>
+      <button onclick="appendDigit('0')">0</button>
+      <button onclick="backspace()">X</button>
+    </div>
+    <div id="popupFooter">
+      <button onclick="startOrder()">เริ่มสั่งอาหาร +</button>
+    </div>
+  </div>
+
+  <script>
+    let customerCount = "";
+
+    function goToTable() {
+      window.location.href = "./table.html";
+    }
+
+    function openPopup() {
+      customerCount = "";
+      document.getElementById("popupDisplay").innerText = "";
+      document.getElementById("popup").style.display = "block";
+    }
+
+    function appendDigit(d) {
+      if (customerCount.length < 3) {
+        customerCount += d;
+        document.getElementById("popupDisplay").innerText = customerCount;
+      }
+    }
+
+    function clearCount() {
+      customerCount = "";
+      document.getElementById("popupDisplay").innerText = "";
+    }
+
+    function backspace() {
+      customerCount = customerCount.slice(0, -1);
+      document.getElementById("popupDisplay").innerText = customerCount;
+    }
+
+      function startOrder() {
+      if (customerCount === "") {
+        alert("กรุณากรอกจำนวนลูกค้า");
+        return;
+      }
+      document.getElementById("popup").style.display = "none";
+      window.location.href = "./ordermenu.html";
+    }
+
+    function goHome() {
+      window.location.href = "index.html";
+    }
+
+    function goBack() {
+      window.history.back();
+    }
+
+    // นับเวลาถอยหลัง 5 นาที
+    let timeout;
+    function resetTimer() {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        window.location.href = "index.html";
+      }, 5 * 60 * 1000);
+    }
+
+    window.onload = resetTimer;
+    window.onmousemove = resetTimer;
+    window.onkeydown = resetTimer;
+  </script>
+
+
+<script>
+const clickSound = new AudioContext();
+function playClick(){
+  const o = clickSound.createOscillator();
+  const g = clickSound.createGain();
+  o.connect(g); g.connect(clickSound.destination);
+  o.type = "square"; o.frequency.setValueAtTime(600, clickSound.currentTime);
+  g.gain.setValueAtTime(0.05, clickSound.currentTime);
+  o.start(); o.stop(clickSound.currentTime + 0.1);
+  if (navigator.vibrate) navigator.vibrate(40);
+}
+function playError(){
+  const o = clickSound.createOscillator();
+  const g = clickSound.createGain();
+  o.connect(g); g.connect(clickSound.destination);
+  o.type = "sawtooth"; o.frequency.setValueAtTime(200, clickSound.currentTime);
+  g.gain.setValueAtTime(0.1, clickSound.currentTime);
+  o.start(); o.stop(clickSound.currentTime + 0.2);
+  if (navigator.vibrate) navigator.vibrate([100,60,100]);
+}
+document.addEventListener("DOMContentLoaded",()=>{
+  document.querySelectorAll('button,a').forEach(el=>{
+    el.addEventListener('click',playClick);
+  });
+});
+const _alert=window.alert;
+window.alert=function(msg){playError();_alert(msg);};
+</script>
+
+</body>
+</html>
