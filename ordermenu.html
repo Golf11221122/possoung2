@@ -510,7 +510,37 @@
   }
 }
 
-    </style>
+    
+/* 🛒 ปุ่มตะกร้า */
+.cart-button {
+  position: fixed;
+  bottom: 18px;
+  right: 18px;
+  background: linear-gradient(90deg, #0047AB, #0066CC);
+  color: white;
+  border-radius: 50px;
+  padding: 12px 18px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  z-index: 1100;
+  cursor: pointer;
+  transition: transform .15s ease;
+}
+
+.cart-button:hover {
+  transform: scale(1.05);
+}
+
+.cart-button span {
+  background: #FF4500;
+  border-radius: 12px;
+  padding: 2px 6px;
+  font-size: 0.9rem;
+  margin-left: 4px;
+}
+
+</style>
 
 </head>
 
@@ -527,6 +557,7 @@
             <h3>รายการสั่งซื้อ</h3>
             <div id="orderItems"></div>
             <div class="summary-total" id="totalSummary"></div>
+            <button onclick="playClick(); closeCart()">➕ กลับไปสั่งเพิ่ม</button>
             <button onclick="playClick(); promptDiscountAuth()">🎁 ส่วนลด</button>
             <button onclick="playClick(); submitOrder()">✅ ชำระเงิน</button>
             <button onclick="playClick(); cancelOrder()">❌ ยกเลิก</button>
@@ -661,10 +692,12 @@
             discountPercent = p;
             closeAllPopups();
             updateSummary();
+  updateCartCount(); // ✅ อัปเดตจำนวนตะกร้า
         }
         function removeDiscount() {
             discountPercent = 0;
             updateSummary();
+  updateCartCount(); // ✅ อัปเดตจำนวนตะกร้า
         }
 
         // ---------------- Keypad สำหรับ PIN ----------------
@@ -682,17 +715,20 @@
             if (!order[n]) order[n] = { price: p, quantity: 1 };
             else order[n].quantity++;
             updateSummary();
+  updateCartCount(); // ✅ อัปเดตจำนวนตะกร้า
         }
         function changeQty(n, c) {
             if (order[n]) {
                 order[n].quantity += c;
                 if (order[n].quantity <= 0) delete order[n];
                 updateSummary();
+  updateCartCount(); // ✅ อัปเดตจำนวนตะกร้า
             }
         }
         function removeItem(n) {
             delete order[n];
             updateSummary();
+  updateCartCount(); // ✅ อัปเดตจำนวนตะกร้า
         }
         // ---------------- ฟังก์ชันสรุปยอด ----------------
         function updateSummary() {
@@ -755,6 +791,7 @@
                 order = {};
                 discountPercent = 0;
                 updateSummary();
+  updateCartCount(); // ✅ อัปเดตจำนวนตะกร้า
             }
         }
         // ---------------- Keypad สำหรับเงินสด ----------------
@@ -859,6 +896,7 @@
             order = {};
             discountPercent = 0;
             updateSummary();
+  updateCartCount(); // ✅ อัปเดตจำนวนตะกร้า
         }
 
 
@@ -886,7 +924,29 @@
                     g.appendChild(d);
                 });
             });
-    </script>
+    
+// 🛒 แสดง popup ตะกร้า
+function showCart() {
+  if (Object.keys(order).length === 0) {
+    alert('ยังไม่มีรายการในตะกร้า');
+    return;
+  }
+  showPopup('orderSummary');
+}
+
+// 🛒 ปิด popup และกลับไปสั่งเพิ่ม
+function closeCart() {
+  closeAllPopups();
+}
+
+// 🛒 อัปเดตจำนวนในตะกร้า
+function updateCartCount() {
+  const count = Object.values(order).reduce((sum, item) => sum + item.quantity, 0);
+  document.getElementById('cartCount').innerText = count;
+  document.getElementById('cartButton').style.display = count > 0 ? 'flex' : 'none';
+}
+
+</script>
 
     <!-- 🔊 ระบบเสียงและสั่น -->
     <script>
@@ -953,6 +1013,11 @@
             }
         }, { once: true });
     </script>
+
+<!-- 🛒 ปุ่มตะกร้า -->
+<div id="cartButton" class="cart-button" onclick="showCart()">
+  🛒 <span id="cartCount">0</span>
+</div>
 
 </body>
 
