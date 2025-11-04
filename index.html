@@ -34,6 +34,48 @@
       transition: 0.3s;
     }
     .btn:hover { background: #fff; transform: scale(1.05); }
+
+    #registerBtn {
+      background: #2563eb;
+      color: #fff;
+      width: 300px;
+      margin-top: 20px;
+      font-size: 1.2em;
+    }
+
+    #registerPopup {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+    .popup-content {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 400px;
+      text-align: left;
+      color: #333;
+    }
+    .popup-content input {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .popup-content button {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      background: #2563eb;
+      color: white;
+      font-size: 1.1em;
+    }
   </style>
 </head>
 <body>
@@ -56,77 +98,128 @@
     <button class="btn" onclick="login()">LOG IN</button>
   </div>
 
+  <br>
+  <button id="registerBtn" class="btn" onclick="openRegister()">สมัครสมาชิก</button>
+
+  <!-- Popup สมัครสมาชิก -->
+  <div id="registerPopup">
+    <div class="popup-content">
+      <h3>สมัครสมาชิกใหม่</h3>
+      <input id="fname" placeholder="ชื่อจริง">
+      <input id="lname" placeholder="นามสกุล">
+      <input id="nickname" placeholder="ชื่อเล่น">
+      <input id="age" type="number" placeholder="อายุ">
+      <input id="phone" placeholder="เบอร์โทร">
+      <input id="address" placeholder="ที่อยู่">
+      <button onclick="registerUser()">สมัคร</button>
+      <button style="background:#aaa;margin-top:8px;" onclick="closeRegister()">ยกเลิก</button>
+    </div>
+  </div>
+
+  <!-- เสียง -->
+  <audio id="clickSound" src="https://cdn.pixabay.com/download/audio/2023/04/24/audio_8f3a1677c2.mp3?filename=button-124476.mp3"></audio>
+  <audio id="successSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_6779a1a6ce.mp3?filename=success-1-6297.mp3"></audio>
+  <audio id="errorSound" src="https://cdn.pixabay.com/download/audio/2022/03/22/audio_c713021f47.mp3?filename=error-126627.mp3"></audio>
+  <audio id="registerSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_5e2b58ec3e.mp3?filename=achievement-1-6298.mp3"></audio>
+
   <script>
+    const scriptUrl = "https://script.google.com/macros/s/AKfycbzY9gDX-lBW8lg9nAS5XJ40beHLLMki9UcPe9QyLPlir7Zl1v1bAzgxzyWCIBFBSDNm/exec";
     let pin = "";
+
+    const clickSound = document.getElementById("clickSound");
+    const successSound = document.getElementById("successSound");
+    const errorSound = document.getElementById("errorSound");
+    const registerSound = document.getElementById("registerSound");
+
+    function playSound(snd) { snd.currentTime = 0; snd.play(); }
+
     function appendNumber(num) {
+      playSound(clickSound);
       if (pin.length < 6) {
         pin += num;
         document.getElementById("pinDisplay").innerText = "*".repeat(pin.length);
       }
     }
-    function clearPin() { pin = ""; document.getElementById("pinDisplay").innerText = ""; }
+
+    function clearPin() {
+      playSound(clickSound);
+      pin = "";
+      document.getElementById("pinDisplay").innerText = "";
+    }
 
     async function login() {
-      if (pin.length !== 6) { alert("กรุณากรอกรหัส 6 หลัก"); return; }
-
-      // 🔗 ใส่ลิงก์ Apps Script ของคุณตรงนี้
-      const scriptUrl = "https://script.google.com/macros/s/AKfycbzY9gDX-lBW8lg9nAS5XJ40beHLLMki9UcPe9QyLPlir7Zl1v1bAzgxzyWCIBFBSDNm/exec";
+      if (pin.length !== 6) {
+        playSound(errorSound);
+        alert("กรุณากรอกรหัส 6 หลัก");
+        return;
+      }
 
       try {
         const res = await fetch(scriptUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ pin: pin })
+          body: JSON.stringify({ action: "login", pin })
         });
         const result = await res.text();
-        console.log("Server Response:", result);
 
-        if (result.includes("OK")) window.location.href = "./menu.html?pin=" + pin;
-        else if (result.includes("NO")) { alert("รหัสไม่ถูกต้อง กรุณาลองใหม่"); clearPin(); }
-        else alert("คำตอบจากเซิร์ฟเวอร์: " + result);
+        if (result.includes("OK")) {
+          playSound(successSound);
+          alert("เข้าสู่ระบบสำเร็จ!");
+          window.location.href = "./menu.html?pin=" + pin;
+        } else if (result.includes("NO")) {
+          playSound(errorSound);
+          alert("รหัสไม่ถูกต้อง กรุณาลองใหม่");
+          clearPin();
+        } else {
+          playSound(errorSound);
+          alert("คำตอบจากเซิร์ฟเวอร์: " + result);
+        }
       } catch (err) {
-        console.error("Fetch error:", err);
+        playSound(errorSound);
         alert("เกิดข้อผิดพลาดในการเชื่อมต่อ: " + err.message);
       }
     }
-  </script>
 
-  <!-- ✅ ระบบเสียง -->
-  <script>
-    let audioCtx = null;
-    function initSound() {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // Popup สมัครสมาชิก
+    function openRegister() { document.getElementById("registerPopup").style.display = "flex"; playSound(clickSound); }
+    function closeRegister() { document.getElementById("registerPopup").style.display = "none"; playSound(clickSound); }
+
+    async function registerUser() {
+      const data = {
+        action: "register",
+        fname: document.getElementById("fname").value,
+        lname: document.getElementById("lname").value,
+        nickname: document.getElementById("nickname").value,
+        age: document.getElementById("age").value,
+        phone: document.getElementById("phone").value,
+        address: document.getElementById("address").value
+      };
+      if (!data.fname || !data.lname || !data.phone) {
+        playSound(errorSound);
+        return alert("กรอกข้อมูลให้ครบก่อนสมัคร");
+      }
+
+      try {
+        const res = await fetch(scriptUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+        const result = await res.text();
+        if (result.startsWith("success")) {
+          const id = result.split("|")[1];
+          playSound(registerSound);
+          alert("✅ สมัครสำเร็จ!\nรหัสของคุณคือ: " + id);
+          closeRegister();
+        } else {
+          playSound(errorSound);
+          alert("❌ สมัครไม่สำเร็จ: " + result);
+        }
+      } catch (err) {
+        playSound(errorSound);
+        alert("เชื่อมต่อไม่ได้: " + err.message);
+      }
     }
-
-    function playClick() {
-      initSound();
-      const o = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
-      o.connect(g); g.connect(audioCtx.destination);
-      o.type = "square"; o.frequency.setValueAtTime(600, audioCtx.currentTime);
-      g.gain.setValueAtTime(0.05, audioCtx.currentTime);
-      o.start(); o.stop(audioCtx.currentTime + 0.1);
-    }
-
-    function playError() {
-      initSound();
-      const o = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
-      o.connect(g); g.connect(audioCtx.destination);
-      o.type = "triangle"; o.frequency.setValueAtTime(180, audioCtx.currentTime);
-      g.gain.setValueAtTime(0.1, audioCtx.currentTime);
-      o.start(); o.stop(audioCtx.currentTime + 0.3);
-    }
-
-    document.querySelectorAll("button").forEach(btn => {
-      btn.addEventListener("click", playClick);
-    });
-
-    const oldAlert = window.alert;
-    window.alert = function(msg) {
-      playError();
-      oldAlert(msg);
-    };
   </script>
 </body>
 </html>
