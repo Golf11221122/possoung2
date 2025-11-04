@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -53,7 +54,7 @@
       border-radius: 20px;
       background-color: #ffffffcc;
       color: #002366;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
       cursor: pointer;
       transition: 0.3s;
     }
@@ -64,11 +65,18 @@
     }
 
     @media screen and (max-width: 500px) {
-      #storeName { font-size: 2em; }
-      .btn { padding: 15px; font-size: 1.2em; }
+      #storeName {
+        font-size: 2em;
+      }
+
+      .btn {
+        padding: 15px;
+        font-size: 1.2em;
+      }
     }
   </style>
 </head>
+
 <body>
 
   <h1>Welcome Happy to day</h1>
@@ -107,13 +115,13 @@
       document.getElementById("pinDisplay").innerText = "";
     }
 
-   async function login() {
-  if (pin.length !== 6) {
-    alert("กรุณากรอกรหัส 6 หลัก");
-    return;
-  }
+    function login() {
+      if (pin.length !== 6) {
+        alert("กรุณากรอกรหัส 6 หลัก");
+        return;
+      }
 
-  fetch("https://script.google.com/macros/s/AKfycbzY9gDX-lBW8lg9nAS5XJ40beHLLMki9UcPe9QyLPlir7Zl1v1bAzgxzyWCIBFBSDNm/exec", {
+      fetch("https://script.google.com/macros/s/AKfycbzY9gDX-lBW8lg9nAS5XJ40beHLLMki9UcPe9QyLPlir7Zl1v1bAzgxzyWCIBFBSDNm/exec", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pin: pin })
@@ -121,14 +129,18 @@
         .then(res => res.text())
         .then(result => {
           if (result.trim() === "OK") {
+            // ✅ รหัสถูกต้อง ไปหน้าเมนู
             window.location.href = "./menu.html?pin=" + pin;
           } else {
-            alert("รหัสไม่ถูกต้อง หรือเกิดข้อผิดพลาด: " + result);
+            alert("รหัสไม่ถูกต้อง กรุณาลองใหม่");
+            clearPin();
           }
         })
         .catch(err => {
-          alert("เกิดข้อผิดพลาดในการเชื่อมต่อแบบตรง: " + err.message);
+          alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+          console.error(err);
         });
+    }
 
 
     function updateDateTime() {
@@ -145,34 +157,35 @@
   </script>
 
 
-<script>
-const clickSound = new AudioContext();
-function playClick(){
-  const o = clickSound.createOscillator();
-  const g = clickSound.createGain();
-  o.connect(g); g.connect(clickSound.destination);
-  o.type = "square"; o.frequency.setValueAtTime(600, clickSound.currentTime);
-  g.gain.setValueAtTime(0.05, clickSound.currentTime);
-  o.start(); o.stop(clickSound.currentTime + 0.1);
-  if (navigator.vibrate) navigator.vibrate(40);
-}
-function playError(){
-  const o = clickSound.createOscillator();
-  const g = clickSound.createGain();
-  o.connect(g); g.connect(clickSound.destination);
-  o.type = "sawtooth"; o.frequency.setValueAtTime(200, clickSound.currentTime);
-  g.gain.setValueAtTime(0.1, clickSound.currentTime);
-  o.start(); o.stop(clickSound.currentTime + 0.2);
-  if (navigator.vibrate) navigator.vibrate([100,60,100]);
-}
-document.addEventListener("DOMContentLoaded",()=>{
-  document.querySelectorAll('button,a').forEach(el=>{
-    el.addEventListener('click',playClick);
-  });
-});
-const _alert=window.alert;
-window.alert=function(msg){playError();_alert(msg);};
-</script>
+  <script>
+    const clickSound = new AudioContext();
+    function playClick() {
+      const o = clickSound.createOscillator();
+      const g = clickSound.createGain();
+      o.connect(g); g.connect(clickSound.destination);
+      o.type = "square"; o.frequency.setValueAtTime(600, clickSound.currentTime);
+      g.gain.setValueAtTime(0.05, clickSound.currentTime);
+      o.start(); o.stop(clickSound.currentTime + 0.1);
+      if (navigator.vibrate) navigator.vibrate(40);
+    }
+    function playError() {
+      const o = clickSound.createOscillator();
+      const g = clickSound.createGain();
+      o.connect(g); g.connect(clickSound.destination);
+      o.type = "sawtooth"; o.frequency.setValueAtTime(200, clickSound.currentTime);
+      g.gain.setValueAtTime(0.1, clickSound.currentTime);
+      o.start(); o.stop(clickSound.currentTime + 0.2);
+      if (navigator.vibrate) navigator.vibrate([100, 60, 100]);
+    }
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelectorAll('button,a').forEach(el => {
+        el.addEventListener('click', playClick);
+      });
+    });
+    const _alert = window.alert;
+    window.alert = function (msg) { playError(); _alert(msg); };
+  </script>
 
 </body>
+
 </html>
