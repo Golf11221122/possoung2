@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>JOKJUNG POS - Login</title>
   <style>
@@ -34,40 +34,27 @@
       transition: 0.3s;
     }
     .btn:hover { background: #fff; transform: scale(1.05); }
+    .switch { color: #2563eb; cursor: pointer; text-decoration: underline; }
 
-    #registerBtn {
-      background: #2563eb;
-      color: #fff;
-      width: 300px;
-      margin-top: 20px;
-      font-size: 1.2em;
-    }
-
-    #registerPopup {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6);
+    /* ฟอร์มสมัคร */
+    #registerForm {
       display: none;
-      justify-content: center;
-      align-items: center;
-    }
-    .popup-content {
+      max-width: 400px;
+      margin: 30px auto;
+      text-align: left;
       background: #fff;
       padding: 20px;
       border-radius: 12px;
-      width: 90%;
-      max-width: 400px;
-      text-align: left;
-      color: #333;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     }
-    .popup-content input {
+    #registerForm input {
       width: 100%;
       margin-bottom: 10px;
       padding: 10px;
       border: 1px solid #ccc;
       border-radius: 6px;
     }
-    .popup-content button {
+    #registerForm button {
       width: 100%;
       padding: 10px;
       border: none;
@@ -75,61 +62,61 @@
       background: #2563eb;
       color: white;
       font-size: 1.1em;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
   <h1>Welcome Happy Today</h1>
   <div id="storeName">JOKJUNG</div>
-  <div id="pinDisplay"></div>
+  <div id="loginArea">
+    <div id="pinDisplay"></div>
 
-  <div class="button-grid">
-    <button class="btn" onclick="appendNumber('1')">1</button>
-    <button class="btn" onclick="appendNumber('2')">2</button>
-    <button class="btn" onclick="appendNumber('3')">3</button>
-    <button class="btn" onclick="appendNumber('4')">4</button>
-    <button class="btn" onclick="appendNumber('5')">5</button>
-    <button class="btn" onclick="appendNumber('6')">6</button>
-    <button class="btn" onclick="appendNumber('7')">7</button>
-    <button class="btn" onclick="appendNumber('8')">8</button>
-    <button class="btn" onclick="appendNumber('9')">9</button>
-    <button class="btn" onclick="clearPin()">X</button>
-    <button class="btn" onclick="appendNumber('0')">0</button>
-    <button class="btn" onclick="login()">LOG IN</button>
+    <div class="button-grid">
+      <button class="btn" onclick="appendNumber('1')">1</button>
+      <button class="btn" onclick="appendNumber('2')">2</button>
+      <button class="btn" onclick="appendNumber('3')">3</button>
+      <button class="btn" onclick="appendNumber('4')">4</button>
+      <button class="btn" onclick="appendNumber('5')">5</button>
+      <button class="btn" onclick="appendNumber('6')">6</button>
+      <button class="btn" onclick="appendNumber('7')">7</button>
+      <button class="btn" onclick="appendNumber('8')">8</button>
+      <button class="btn" onclick="appendNumber('9')">9</button>
+      <button class="btn" onclick="clearPin()">X</button>
+      <button class="btn" onclick="appendNumber('0')">0</button>
+      <button class="btn" onclick="login()">LOG IN</button>
+    </div>
+
+    <p style="margin-top: 20px;">ยังไม่มีบัญชี? <span class="switch" onclick="showRegister()">สมัครสมาชิก</span></p>
   </div>
 
-  <br>
-  <button id="registerBtn" class="btn" onclick="openRegister()">สมัครสมาชิก</button>
-
-  <!-- Popup สมัครสมาชิก -->
-  <div id="registerPopup">
-    <div class="popup-content">
-      <h3>สมัครสมาชิกใหม่</h3>
-      <input id="fname" placeholder="ชื่อจริง">
-      <input id="lname" placeholder="นามสกุล">
-      <input id="nickname" placeholder="ชื่อเล่น">
-      <input id="age" type="number" placeholder="อายุ">
-      <input id="phone" placeholder="เบอร์โทร">
-      <input id="address" placeholder="ที่อยู่">
-      <button onclick="registerUser()">สมัคร</button>
-      <button style="background:#aaa;margin-top:8px;" onclick="closeRegister()">ยกเลิก</button>
-    </div>
+  <!-- ฟอร์มสมัครสมาชิก -->
+  <div id="registerForm">
+    <h3>สมัครสมาชิกใหม่</h3>
+    <input id="fname" placeholder="ชื่อจริง">
+    <input id="lname" placeholder="นามสกุล">
+    <input id="nickname" placeholder="ชื่อเล่น">
+    <input id="age" type="number" placeholder="อายุ">
+    <input id="phone" placeholder="เบอร์โทร">
+    <input id="address" placeholder="ที่อยู่">
+    <button onclick="registerUser()">สมัครสมาชิก</button>
+    <p style="text-align:center;margin-top:10px;">มีบัญชีแล้ว? <span class="switch" onclick="hideRegister()">กลับไปล็อกอิน</span></p>
   </div>
 
   <!-- เสียง -->
   <audio id="clickSound" src="https://cdn.pixabay.com/download/audio/2023/04/24/audio_8f3a1677c2.mp3?filename=button-124476.mp3"></audio>
   <audio id="successSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_6779a1a6ce.mp3?filename=success-1-6297.mp3"></audio>
   <audio id="errorSound" src="https://cdn.pixabay.com/download/audio/2022/03/22/audio_c713021f47.mp3?filename=error-126627.mp3"></audio>
-  <audio id="registerSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_5e2b58ec3e.mp3?filename=achievement-1-6298.mp3"></audio>
 
   <script>
-    const scriptUrl = "https://script.google.com/macros/s/AKfycbzY9gDX-lBW8lg9nAS5XJ40beHLLMki9UcPe9QyLPlir7Zl1v1bAzgxzyWCIBFBSDNm/exec";
-    let pin = "";
+    // ✅ ผ่าน proxy เพื่อหลบ CORS
+    const scriptUrl = "https://corsproxy.io/?" +
+      encodeURIComponent("https://script.google.com/macros/s/AKfycbzY9gDX-lBW8lg9nAS5XJ40beHLLMki9UcPe9QyLPlir7Zl1v1bAzgxzyWCIBFBSDNm/exec");
 
+    let pin = "";
     const clickSound = document.getElementById("clickSound");
     const successSound = document.getElementById("successSound");
     const errorSound = document.getElementById("errorSound");
-    const registerSound = document.getElementById("registerSound");
 
     function playSound(snd) { snd.currentTime = 0; snd.play(); }
 
@@ -153,7 +140,6 @@
         alert("กรุณากรอกรหัส 6 หลัก");
         return;
       }
-
       try {
         const res = await fetch(scriptUrl, {
           method: "POST",
@@ -166,25 +152,31 @@
           playSound(successSound);
           alert("เข้าสู่ระบบสำเร็จ!");
           window.location.href = "./menu.html?pin=" + pin;
-        } else if (result.includes("NO")) {
+        } else {
           playSound(errorSound);
           alert("รหัสไม่ถูกต้อง กรุณาลองใหม่");
           clearPin();
-        } else {
-          playSound(errorSound);
-          alert("คำตอบจากเซิร์ฟเวอร์: " + result);
         }
       } catch (err) {
         playSound(errorSound);
-        alert("เกิดข้อผิดพลาดในการเชื่อมต่อ: " + err.message);
+        alert("เชื่อมต่อไม่ได้: " + err.message);
       }
     }
 
-    // Popup สมัครสมาชิก
-    function openRegister() { document.getElementById("registerPopup").style.display = "flex"; playSound(clickSound); }
-    function closeRegister() { document.getElementById("registerPopup").style.display = "none"; playSound(clickSound); }
+    function showRegister() {
+      playSound(clickSound);
+      document.getElementById("loginArea").style.display = "none";
+      document.getElementById("registerForm").style.display = "block";
+    }
+
+    function hideRegister() {
+      playSound(clickSound);
+      document.getElementById("registerForm").style.display = "none";
+      document.getElementById("loginArea").style.display = "block";
+    }
 
     async function registerUser() {
+      playSound(clickSound);
       const data = {
         action: "register",
         fname: document.getElementById("fname").value,
@@ -196,9 +188,9 @@
       };
       if (!data.fname || !data.lname || !data.phone) {
         playSound(errorSound);
-        return alert("กรอกข้อมูลให้ครบก่อนสมัคร");
+        alert("กรอกข้อมูลให้ครบก่อนสมัคร");
+        return;
       }
-
       try {
         const res = await fetch(scriptUrl, {
           method: "POST",
@@ -206,14 +198,15 @@
           body: JSON.stringify(data)
         });
         const result = await res.text();
+
         if (result.startsWith("success")) {
           const id = result.split("|")[1];
-          playSound(registerSound);
-          alert("✅ สมัครสำเร็จ!\nรหัสของคุณคือ: " + id);
-          closeRegister();
+          playSound(successSound);
+          alert("สมัครสำเร็จ! รหัสของคุณคือ: " + id);
+          hideRegister(); // ✅ เด้งกลับไปหน้าล็อกอิน
         } else {
           playSound(errorSound);
-          alert("❌ สมัครไม่สำเร็จ: " + result);
+          alert("สมัครไม่สำเร็จ: " + result);
         }
       } catch (err) {
         playSound(errorSound);
