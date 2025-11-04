@@ -115,33 +115,38 @@
       document.getElementById("pinDisplay").innerText = "";
     }
 
-    function login() {
+    async function login() {
       if (pin.length !== 6) {
         alert("กรุณากรอกรหัส 6 หลัก");
         return;
       }
 
-      fetch("https://script.google.com/macros/s/AKfycbzY9gDX-lBW8lg9nAS5XJ40beHLLMki9UcPe9QyLPlir7Zl1v1bAzgxzyWCIBFBSDNm/exec", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pin: pin })
-      })
-        .then(res => res.text())
-        .then(result => {
-          if (result.trim() === "OK") {
-            // ✅ รหัสถูกต้อง ไปหน้าเมนู
-            window.location.href = "./menu.html?pin=" + pin;
-          } else {
-            alert("รหัสไม่ถูกต้อง กรุณาลองใหม่");
-            clearPin();
-          }
-        })
-        .catch(err => {
-          alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
-          console.error(err);
-        });
-    }
+      const scriptUrl = "https://script.google.com/macros/s/AKfycbzY9gDX-lBW8lg9nAS5XJ40beHLLMki9UcPe9QyLPlir7Zl1v1bAzgxzyWCIBFBSDNm/exec";
 
+      try {
+        const res = await fetch(scriptUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pin: pin })
+        });
+
+        const result = await res.text();
+        console.log("Response from server:", result);
+
+        // ✅ ตรวจว่ามีคำว่า OK อยู่ในข้อความที่ส่งกลับมา (ไม่สน <html> หรือช่องว่าง)
+        if (result.includes("OK")) {
+          window.location.href = "./menu.html?pin=" + pin;
+        } else if (result.includes("NO")) {
+          alert("รหัสไม่ถูกต้อง กรุณาลองใหม่");
+          clearPin();
+        } else {
+          alert("คำตอบจากเซิร์ฟเวอร์: " + result);
+        }
+      } catch (err) {
+        console.error("Fetch error:", err);
+        alert("เกิดข้อผิดพลาดในการเชื่อมต่อ: " + err.message);
+      }
+    }
 
     function updateDateTime() {
       const now = new Date();
@@ -155,7 +160,6 @@
     setInterval(updateDateTime, 1000);
     updateDateTime();
   </script>
-
 
   <script>
     const clickSound = new AudioContext();
