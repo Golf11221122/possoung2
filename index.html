@@ -113,75 +113,22 @@
     return;
   }
 
-  const scriptUrl = "https://script.google.com/macros/s/AKfycbzY9gDX-lBW8lg9nAS5XJ40beHLLMki9UcPe9QyLPlir7Zl1v1bAzgxzyWCIBFBSDNm/exec";
-  const proxyUrl = "https://corsproxy.io/?";
-
-  try {
-    // 1) เรียกผ่าน proxy ก่อน (รูปแบบ: https://corsproxy.io/?https://...)
-    let resp = await fetch(proxyUrl + scriptUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pin: pin })
-    });
-
-    const text = await resp.text();
-
-    // debug: ให้ดู status และ body ใน console
-    console.log("Proxy response status:", resp.status);
-    console.log("Proxy response body:", text);
-
-    if (resp.ok && text.trim() === "OK") {
-      window.location.href = "./menu.html?pin=" + pin;
-      return;
-    }
-
-    // ถ้า proxy ตอบแต่ไม่ใช่ OK -> แสดงข้อความ server ตอบ
-    if (resp.ok) {
-      alert("เซิร์ฟเวอร์ตอบ: " + text);
-      clearPin();
-      return;
-    }
-
-    // 2) ถ้า proxy ล้มเหลว (เช่น 4xx/5xx หรือ network) ให้ลอง fetch ตรงไปยัง script โดยตรง
-    console.warn("Proxy failed or returned non-ok, trying direct fetch to script...");
-
-    try {
-      let direct = await fetch(scriptUrl, {
+  fetch("https://script.google.com/macros/s/AKfycbzY9gDX-lBW8lg9nAS5XJ40beHLLMki9UcPe9QyLPlir7Zl1v1bAzgxzyWCIBFBSDNm/exec", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pin: pin })
-      });
-
-      const directText = await direct.text();
-      console.log("Direct response status:", direct.status);
-      console.log("Direct response body:", directText);
-
-      if (direct.ok && directText.trim() === "OK") {
-        window.location.href = "./menu.html?pin=" + pin;
-        return;
-      }
-
-      if (direct.ok) {
-        alert("เซิร์ฟเวอร์ตอบ: " + directText);
-        clearPin();
-        return;
-      }
-
-      // ถ้าถึงตรงนี้ทั้ง proxy และ direct ไม่ ok
-      alert("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ (status: " + direct.status + "). เปิด Console ดูรายละเอียด.");
-      clearPin();
-    } catch (errDirect) {
-      console.error("Direct fetch error:", errDirect);
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อแบบตรง: " + (errDirect.message || errDirect));
-    }
-
-  } catch (err) {
-    // network / CORS error from proxy
-    console.error("Proxy fetch error:", err);
-    alert("เกิดข้อผิดพลาดในการเชื่อมต่อ (proxy). ดู Console เพื่อดูรายละเอียด.");
-  }
-}
-
+      })
+        .then(res => res.text())
+        .then(result => {
+          if (result.trim() === "OK") {
+            window.location.href = "./menu.html?pin=" + pin;
+          } else {
+            alert("รหัสไม่ถูกต้อง หรือเกิดข้อผิดพลาด: " + result);
+          }
+        })
+        .catch(err => {
+          alert("เกิดข้อผิดพลาดในการเชื่อมต่อแบบตรง: " + err.message);
+        });
 
 
     function updateDateTime() {
