@@ -847,8 +847,8 @@
   const orderType = localStorage.getItem("orderType") || "-";
   const customerCount = localStorage.getItem("customerCount") || "-";
   const tableNumber = localStorage.getItem("tableNumber") || "-";
-            closeAllPopups();
-            let html = `
+  closeAllPopups();
+  let html = `
   <div style="margin-bottom:10px; font-weight:600;">
     🍽️ ${orderType} | 👥 ${customerCount} คน | 🪑 โต๊ะ ${tableNumber}
   </div>
@@ -857,32 +857,27 @@
       <th style="width:60%; text-align:left;">รายการ</th>
       <th style="width:20%; text-align:center;">จำนวน</th>
       <th style="width:20%; text-align:right;">ราคา</th>
-    </tr>`
-    <tr>
-      <th style="width:60%; text-align:left;">รายการ</th>
-      <th style="width:20%; text-align:center;">จำนวน</th>
-      <th style="width:20%; text-align:right;">ราคา</th>
     </tr>`;
 
-            let subtotal = 0, totalQty = 0;
-            for (const n in order) {
-                const it = order[n];
-                subtotal += it.price * it.quantity;
-                totalQty += it.quantity;
-                html += `
-    <tr>
-      <td>${n}</td>
-      <td style="text-align:center;">${it.quantity}</td>
-      <td style="text-align:right;">${(it.price * it.quantity).toFixed(2)}</td>
-    </tr>`;
-            }
+  let subtotal = 0, totalQty = 0;
+  for (const n in order) {
+      const it = order[n];
+      subtotal += it.price * it.quantity;
+      totalQty += it.quantity;
+      html += `
+      <tr>
+        <td>${n}</td>
+        <td style="text-align:center;">${it.quantity}</td>
+        <td style="text-align:right;">${(it.price * it.quantity).toFixed(2)}</td>
+      </tr>`;
+  }
 
-            const discount = subtotal * (discountPercent / 100);
-            const totalAfterDiscount = subtotal - discount;
-            const { beforeVat, vatAmount } = calcTaxFromIncluded(totalAfterDiscount);
-            const net = totalAfterDiscount;
+  const discount = subtotal * (discountPercent / 100);
+  const totalAfterDiscount = subtotal - discount;
+  const { beforeVat, vatAmount } = calcTaxFromIncluded(totalAfterDiscount);
+  const net = totalAfterDiscount;
 
-            html += `
+  html += `
   <tr>
     <td colspan="3" style="text-align:left; font-weight:bold;">รวมทั้งหมด: ${totalQty} รายการ</td>
   </tr>
@@ -903,13 +898,13 @@
     </div>
   </div>`;
 
-            document.getElementById('receiptDetails').innerHTML = html;
-            showPopup('receiptPopup');
-            order = {};
-            discountPercent = 0;
-            updateSummary();
-  updateCartCount(); // ✅ อัปเดตจำนวนตะกร้า
-        }
+  document.getElementById('receiptDetails').innerHTML = html;
+  showPopup('receiptPopup');
+  order = {};
+  discountPercent = 0;
+  updateSummary();
+  updateCartCount();
+}
 
 
 
