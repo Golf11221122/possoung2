@@ -1,209 +1,226 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>JOKJUNG POS - Login</title>
-  <style>
-    body {
-      font-family: 'Prompt', sans-serif;
-      background: linear-gradient(to bottom right, #dca53f, #d3803f);
-      color: #001c44;
-      text-align: center;
-      padding: 20px;
-    }
-    h1 { font-size: 2rem; margin-top: 40px; }
-    #pinDisplay {
-      font-size: 2rem;
-      letter-spacing: 10px;
-      margin: 20px 0;
-    }
-    .pad {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      max-width: 250px;
-      margin: 0 auto;
-    }
-    button {
-      font-size: 1.4rem;
-      border: none;
-      border-radius: 15px;
-      padding: 15px;
-      background: #eee;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.2);
-      cursor: pointer;
-    }
-    button:active { background: #ccc; }
-    #signupForm {
-      display: none;
-      background: rgba(255,255,255,0.9);
-      padding: 20px;
-      border-radius: 20px;
-      margin-top: 20px;
-    }
-    input {
-      width: 90%;
-      padding: 8px;
-      margin: 5px 0;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JOKJUNG POS - Login</title>
+<style>
+  body {
+    font-family: 'Prompt', sans-serif;
+    background: #d79236;
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  h1 {
+    color: #06274a;
+    font-weight: 800;
+    font-size: 2.2em;
+    letter-spacing: 2px;
+    margin-bottom: 30px;
+  }
+  .pin-display {
+    font-size: 1.8em;
+    letter-spacing: 10px;
+    color: #001f3f;
+    margin-bottom: 25px;
+  }
+  .keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 80px);
+    gap: 15px;
+    justify-content: center;
+  }
+  .btn {
+    font-size: 1.3em;
+    background: white;
+    color: #001f3f;
+    border: none;
+    border-radius: 10px;
+    height: 70px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .btn:hover {
+    background: #f3f3f3;
+    transform: scale(1.05);
+  }
+  .login-btn {
+    background: #0b3c87;
+    color: white;
+  }
+  a {
+    color: #002366;
+    margin-top: 25px;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  /* popup */
+  .popup {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    justify-content: center;
+    align-items: center;
+  }
+  .popup-content {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    width: 300px;
+    text-align: center;
+  }
+  input {
+    width: 100%;
+    margin: 7px 0;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+  }
+  .popup button {
+    width: 48%;
+    margin-top: 10px;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    background: #0b3c87;
+    cursor: pointer;
+  }
+  .cancel-btn {
+    background: gray;
+  }
+</style>
 </head>
 <body>
-  <h1>JOKJUNG</h1>
-  <div id="loginSection">
-    <div id="pinDisplay">******</div>
-    <div class="pad">
-      <button onclick="appendNumber('1')">1</button>
-      <button onclick="appendNumber('2')">2</button>
-      <button onclick="appendNumber('3')">3</button>
-      <button onclick="appendNumber('4')">4</button>
-      <button onclick="appendNumber('5')">5</button>
-      <button onclick="appendNumber('6')">6</button>
-      <button onclick="appendNumber('7')">7</button>
-      <button onclick="appendNumber('8')">8</button>
-      <button onclick="appendNumber('9')">9</button>
-      <button onclick="clearPin()">X</button>
-      <button onclick="appendNumber('0')">0</button>
-      <button onclick="login()">LOG IN</button>
+
+<h1>JOKJUNG</h1>
+<div class="pin-display" id="pinDisplay">******</div>
+<div class="keypad">
+  <button class="btn" onclick="appendNumber(1)">1</button>
+  <button class="btn" onclick="appendNumber(2)">2</button>
+  <button class="btn" onclick="appendNumber(3)">3</button>
+  <button class="btn" onclick="appendNumber(4)">4</button>
+  <button class="btn" onclick="appendNumber(5)">5</button>
+  <button class="btn" onclick="appendNumber(6)">6</button>
+  <button class="btn" onclick="appendNumber(7)">7</button>
+  <button class="btn" onclick="appendNumber(8)">8</button>
+  <button class="btn" onclick="appendNumber(9)">9</button>
+  <button class="btn" onclick="clearPin()">X</button>
+  <button class="btn" onclick="appendNumber(0)">0</button>
+  <button class="btn login-btn" onclick="login()">LOG IN</button>
+</div>
+
+<a onclick="openSignup()">สมัครสมาชิก</a>
+
+<!-- popup สมัครสมาชิก -->
+<div class="popup" id="signupPopup">
+  <div class="popup-content">
+    <h3>สมัครสมาชิก</h3>
+    <input type="text" id="fname" placeholder="ชื่อจริง">
+    <input type="text" id="lname" placeholder="นามสกุล">
+    <input type="text" id="nickname" placeholder="ชื่อเล่น">
+    <input type="number" id="age" placeholder="อายุ">
+    <input type="text" id="phone" placeholder="เบอร์โทรศัพท์">
+    <input type="text" id="address" placeholder="ที่อยู่">
+    <div style="display:flex;justify-content:space-between;">
+      <button onclick="submitSignup()">สมัคร</button>
+      <button class="cancel-btn" onclick="closeSignup()">ยกเลิก</button>
     </div>
-    <p style="margin-top:20px;"><a href="#" onclick="showSignup()">สมัครสมาชิก</a></p>
   </div>
+</div>
 
-  <div id="signupForm">
-    <h2>สมัครสมาชิก</h2>
-    <input id="fname" placeholder="ชื่อจริง">
-    <input id="lname" placeholder="นามสกุล">
-    <input id="nickname" placeholder="ชื่อเล่น">
-    <input id="age" placeholder="อายุ">
-    <input id="phone" placeholder="เบอร์โทร">
-    <input id="address" placeholder="ที่อยู่">
-    <button onclick="signup()">สมัคร</button>
-    <button onclick="hideSignup()">ยกเลิก</button>
-  </div>
+<audio id="clickSound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_7f6bfa56a4.mp3"></audio>
 
-  <!-- เสียงตัวอย่าง -->
-  <audio id="clickSound" src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_c5f51d6c74.mp3?filename=click-21156.mp3" preload="auto"></audio>
-  <audio id="successSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_74d3a79e91.mp3?filename=correct-2-46134.mp3" preload="auto"></audio>
-  <audio id="errorSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_6b41a0c829.mp3?filename=error-2-126514.mp3" preload="auto"></audio>
+<script>
+const scriptUrl = "https://script.google.com/macros/s/AKfycbzY9gDX-lBW8lg9nAS5XJ40beHLLMki9UcPe9QyLPlir7Zl1v1bAzgxzyWCIBFBSDNm/exec";
+let pin = "";
 
-  <script>
-    const scriptUrl = "https://script.google.com/macros/s/AKfycbzY9gDX-lBW8lg9nAS5XJ40beHLLMki9UcPe9QyLPlir7Zl1v1bAzgxzyWCIBFBSDNm/exec";
-    let pin = "";
+function playClick() {
+  document.getElementById("clickSound").play();
+}
 
-    const clickSound = document.getElementById('clickSound');
-    const successSound = document.getElementById('successSound');
-    const errorSound = document.getElementById('errorSound');
+function appendNumber(num) {
+  playClick();
+  if (pin.length < 6) {
+    pin += num;
+    document.getElementById("pinDisplay").textContent = "*".repeat(pin.length);
+  }
+}
 
-    function play(sound) {
-      sound.currentTime = 0;
-      sound.play().catch(()=>{});
+function clearPin() {
+  playClick();
+  pin = "";
+  document.getElementById("pinDisplay").textContent = "******";
+}
+
+async function login() {
+  if (pin.length !== 6) return alert("กรุณากรอกรหัส 6 หลัก");
+  playClick();
+  try {
+    const res = await fetch(scriptUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pin })
+    });
+    const result = await res.text();
+    if (result.includes("OK")) {
+      alert("เข้าสู่ระบบสำเร็จ!");
+      window.location.href = "menu.html?pin=" + pin;
+    } else {
+      alert("รหัสไม่ถูกต้อง กรุณาลองใหม่");
     }
+  } catch (err) {
+    alert("เชื่อมต่อเซิร์ฟเวอร์ไม่ได้");
+  }
+}
 
-    function appendNumber(num) {
-      if (pin.length < 6) {
-        pin += num;
-        updatePinDisplay();
-        play(clickSound);
-      }
+function openSignup() {
+  playClick();
+  document.getElementById("signupPopup").style.display = "flex";
+}
+
+function closeSignup() {
+  playClick();
+  document.getElementById("signupPopup").style.display = "none";
+}
+
+async function submitSignup() {
+  playClick();
+  const data = {
+    fname: document.getElementById("fname").value.trim(),
+    lname: document.getElementById("lname").value.trim(),
+    nickname: document.getElementById("nickname").value.trim(),
+    age: document.getElementById("age").value.trim(),
+    phone: document.getElementById("phone").value.trim(),
+    address: document.getElementById("address").value.trim()
+  };
+
+  if (!data.fname || !data.lname || !data.phone)
+    return alert("กรุณากรอกข้อมูลให้ครบ");
+
+  try {
+    const res = await fetch(scriptUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+    const result = await res.text();
+    if (result.startsWith("success")) {
+      alert("สมัครสมาชิกสำเร็จ!");
+      closeSignup();
+    } else {
+      alert("เกิดข้อผิดพลาด: " + result);
     }
-
-    function clearPin() {
-      pin = "";
-      updatePinDisplay();
-      play(errorSound);
-    }
-
-    function updatePinDisplay() {
-      const stars = pin.replace(/./g, "*");
-      document.getElementById("pinDisplay").innerText = stars.padEnd(6, "*");
-    }
-
-    async function login() {
-      if (pin.length !== 6) {
-        alert("กรุณากรอกรหัส 6 หลัก");
-        play(errorSound);
-        return;
-      }
-
-      try {
-        const res = await fetch(scriptUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ pin })
-        });
-
-        const text = await res.text();
-        console.log("Login response:", text);
-
-        if (text.trim() === "OK") {
-          play(successSound);
-          window.location.href = "menu.html?pin=" + pin;
-        } else {
-          alert("รหัสไม่ถูกต้อง กรุณาลองใหม่");
-          play(errorSound);
-          clearPin();
-        }
-      } catch (err) {
-        alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
-        play(errorSound);
-        console.error(err);
-      }
-    }
-
-    function showSignup() {
-      document.getElementById("loginSection").style.display = "none";
-      document.getElementById("signupForm").style.display = "block";
-    }
-
-    function hideSignup() {
-      document.getElementById("loginSection").style.display = "block";
-      document.getElementById("signupForm").style.display = "none";
-    }
-
-    async function signup() {
-      const data = {
-        fname: document.getElementById("fname").value.trim(),
-        lname: document.getElementById("lname").value.trim(),
-        nickname: document.getElementById("nickname").value.trim(),
-        age: document.getElementById("age").value.trim(),
-        phone: document.getElementById("phone").value.trim(),
-        address: document.getElementById("address").value.trim()
-      };
-
-      if (!data.fname || !data.lname || !data.phone) {
-        alert("กรุณากรอกชื่อ-นามสกุลและเบอร์โทร");
-        play(errorSound);
-        return;
-      }
-
-      try {
-        const res = await fetch(scriptUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        });
-
-        const text = await res.text();
-        console.log("Signup response:", text);
-
-        if (text.startsWith("success|")) {
-          const newId = text.split("|")[1];
-          alert("สมัครสำเร็จ! รหัสของคุณคือ " + newId);
-          play(successSound);
-          hideSignup();
-        } else {
-          alert("เกิดข้อผิดพลาด: " + text);
-          play(errorSound);
-        }
-      } catch (err) {
-        alert("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
-        play(errorSound);
-        console.error(err);
-      }
-    }
-  </script>
+  } catch (err) {
+    alert("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
+  }
+}
+</script>
 </body>
 </html>
