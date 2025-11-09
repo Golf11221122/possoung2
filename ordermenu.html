@@ -842,12 +842,13 @@
             showReceipt('QR Code', 0, 0);
         }
 
-        // ---------------- ใบเสร็จ ----------------
-        function showReceipt(method, paid, change) {
+       // ---------------- ใบเสร็จ ----------------
+function showReceipt(method, paid, change) {
   const orderType = localStorage.getItem("orderType") || "-";
   const customerCount = localStorage.getItem("customerCount") || "-";
   const tableNumber = localStorage.getItem("tableNumber") || "-";
   closeAllPopups();
+
   let html = `
   <div style="margin-bottom:10px; font-weight:600;">
     🍽️ ${orderType} | 👥 ${customerCount} คน | 🪑 โต๊ะ ${tableNumber}
@@ -900,15 +901,48 @@
 
   document.getElementById('receiptDetails').innerHTML = html;
   showPopup('receiptPopup');
+
+  // ✅ เตรียมข้อมูลสำหรับส่งไป n8n (ต้องอยู่ก่อนล้าง order)
+  const payload = {
+      receipt_id: "RC" + Date.now(),
+      datetime: new Date().toLocaleString("th-TH"),
+      staff: "พนักงาน A",
+      payment_method: method,
+      total: net,
+      discount: discountPercent,
+      items: Object.keys(order).map(name => ({
+          name: name,
+          qty: order[name].quantity,
+          price: order[name].price
+      }))
+  };
+
+  // ✅ ส่งไปยัง n8n
+  sendOrderToWebhook(payload);
+
+  // ✅ ค่อยล้างข้อมูลหลังส่งเรียบร้อย
   order = {};
   discountPercent = 0;
   updateSummary();
   updateCartCount();
 }
 
+async function sendOrderToWebhook(payload) {
+    try {
+        const res = await fetch("https://golfn8n231135.app.n8n.cloud/webhook-test/hookgolf", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
 
+        console.log("ส่งข้อมูลไปยัง n8n แล้ว", await res.text());
 
-        function closeReceipt() { closeAllPopups(); }
+    } catch (err) {
+        console.error("เกิดข้อผิดพลาดในการส่งข้อมูลไปยัง webhook:", err);
+    }
+}
+
+      function closeReceipt() { closeAllPopups(); }
 
         // ---------------- หน้าเมนู ----------------
         function goHome() { window.location.href = 'index.html'; }
