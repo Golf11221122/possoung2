@@ -780,7 +780,7 @@
 
         // ---------------- การชำระเงิน ----------------
         function submitOrder() {
-            if (Object.keys(itemsCopy).length === 0) {
+            if (Object.keys(order).length === 0) {
                 alert('ยังไม่มีรายการสั่งซื้อ');
                 return;
             }
@@ -789,7 +789,7 @@
 
         function cancelOrder() {
             if (confirm('ยืนยันยกเลิกคำสั่งซื้อ?')) {
-                
+                order = {};
                 discountPercent = 0;
                 updateSummary();
   updateCartCount(); // ✅ อัปเดตจำนวนตะกร้า
@@ -903,7 +903,6 @@ function showReceipt(method, paid, change) {
   showPopup('receiptPopup');
 
   // ✅ เตรียมข้อมูลสำหรับส่งไป n8n (ต้องอยู่ก่อนล้าง order)
-  const itemsCopy = JSON.parse(JSON.stringify(order));
   const payload = {
       receipt_id: "RC" + Date.now(),
       datetime: new Date().toLocaleString("th-TH"),
@@ -911,7 +910,7 @@ function showReceipt(method, paid, change) {
       payment_method: method,
       total: net,
       discount: discountPercent,
-      items: Object.keys(itemsCopy).map(name => ({
+      items: Object.keys(order).map(name => ({
           name: name,
           qty: order[name].quantity,
           price: order[name].price
@@ -919,19 +918,10 @@ function showReceipt(method, paid, change) {
   };
 
   // ✅ ส่งไปยัง n8n
-  
-sendOrderToWebhook(payload);
-
-setTimeout(() => {
-    order = {};
-    discountPercent = 0;
-    updateSummary();
-    updateCartCount();
-}, 500);
-
+  sendOrderToWebhook(payload);
 
   // ✅ ค่อยล้างข้อมูลหลังส่งเรียบร้อย
-  
+  order = {};
   discountPercent = 0;
   updateSummary();
   updateCartCount();
@@ -978,7 +968,7 @@ async function sendOrderToWebhook(payload) {
     
 // 🛒 แสดง popup ตะกร้า
 function showCart() {
-  if (Object.keys(itemsCopy).length === 0) {
+  if (Object.keys(order).length === 0) {
     alert('ยังไม่มีรายการในตะกร้า');
     return;
   }
