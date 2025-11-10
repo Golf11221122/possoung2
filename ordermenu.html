@@ -903,25 +903,31 @@ function showReceipt(method, paid, change) {
   showPopup('receiptPopup');
 
   // ✅ เตรียมข้อมูลสำหรับส่งไป n8n (ต้องอยู่ก่อนล้าง order)
-  const payload = {
-      receipt_id: "RC" + Date.now(),
-      datetime: new Date().toLocaleString("th-TH"),
-      staff: "พนักงาน A",
-      payment_method: method,
-      total: net,
-      discount: discountPercent,
-      items: Object.keys(order).map(name => ({
-          name: name,
-          qty: order[name].quantity,
-          price: order[name].price
-      }))
-  };
+  const itemsCopy = JSON.parse(JSON.stringify(order));
 
-  // ✅ ส่งไปยัง n8n
-  sendOrderToWebhook(payload);
+const payload = {
+    receipt_id: "RC" + Date.now(),
+    datetime: new Date().toLocaleString("th-TH"),
+    staff: "พนักงาน A",
+    payment_method: method,
+    total: net,
+    discount: discountPercent,
+    items: Object.keys(itemsCopy).map(name => ({
+        name: name,
+        qty: itemsCopy[name].quantity,
+        price: itemsCopy[name].price
+    }))
+};
 
-  // ✅ ค่อยล้างข้อมูลหลังส่งเรียบร้อย
-  order = {};
+sendOrderToWebhook(payload);
+
+setTimeout(() => {
+    order = {};
+    discountPercent = 0;
+    updateSummary();
+    updateCartCount();
+}, 500);
+
   discountPercent = 0;
   updateSummary();
   updateCartCount();
