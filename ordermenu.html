@@ -902,8 +902,8 @@ function showReceipt(method, paid, change) {
   document.getElementById('receiptDetails').innerHTML = html;
   showPopup('receiptPopup');
 
-  // ✅ เตรียมข้อมูลสำหรับส่งไป n8n (ต้องอยู่ก่อนล้าง order)
-  const itemsCopy = JSON.parse(JSON.stringify(order));
+ // ✅ เตรียมข้อมูลสำหรับส่งไป n8n (ต้องอยู่ก่อนล้าง order)
+const itemsCopy = JSON.parse(JSON.stringify(order));
 
 const payload = {
     receipt_id: "RC" + Date.now(),
@@ -919,18 +919,16 @@ const payload = {
     }))
 };
 
+// ✅ ส่งข้อมูลไปยัง n8n
 sendOrderToWebhook(payload);
 
+// ✅ ล้าง order หลังส่ง (ถูกต้อง 100%)
 setTimeout(() => {
     order = {};
     discountPercent = 0;
     updateSummary();
     updateCartCount();
 }, 500);
-
-  discountPercent = 0;
-  updateSummary();
-  updateCartCount();
 }
 
 async function sendOrderToWebhook(payload) {
