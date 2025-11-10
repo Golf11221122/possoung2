@@ -933,7 +933,7 @@ setTimeout(() => {
 
 async function sendOrderToWebhook(payload) {
     try {
-        const res = await fetch("https://golfn8n231135.app.n8n.cloud/webhook-test/hookgolf", {
+        const res = await fetch("https://golfn8n231135.app.n8n.cloud/webhook/hookgolf", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
