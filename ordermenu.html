@@ -587,7 +587,7 @@
     <div class="popup" id="cashPopup">
         <h3>ชำระด้วยเงินสด</h3>
         <p>ยอดที่ต้องชำระ: <strong><span id="cashAmount"></span> ฿</strong></p>
-        <input type="text" id="cashInput" placeholder="จำนวนเงินที่ลูกค้าชำระ" />
+        <input type="text" id="cashInput" placeholder="จำนวนเงินที่ลูกค้าชำระ" readonly />
 
         <div class="keypad">
             <button onclick="playClick(); appendCash('1')">1</button>
@@ -636,112 +636,16 @@
         <button onclick="playClick(); closeReceipt()">กลับหน้าแรก</button>
     </div>
 
-    <script type="module">
-        import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    <button id="payButton" style="display:none;">ชำระเงิน</button> <div id="cartButton" class="cart-button" onclick="showCart()">
+        🛒 <span id="cartCount">0</span>
+    </div>
 
-        const SUPABASE_URL = "https://pujxykbpxsncbrlquaxo.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1anh5a2JweHNuY2JybHF1YXhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3OTI0OTIsImV4cCI6MjA3ODM2ODQ5Mn0.JxavkquEZo0W7NME4CJ01GbLKR0_gYFdcKy2BWCrAso";
-
-        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    <script>
+        // 🛠️ แก้ไข: กำหนดตัวแปรและฟังก์ชันที่ใช้ใน HTML ให้อยู่ใน Global Scope
         let order = {}, discountPercent = 0;
-        let menuMap = {}; // ใช้เก็บ ID เมนูจาก Supabase เพื่อใช้ในการบันทึก receipt_items
+        let menuMap = {}; // ใช้เก็บ ID เมนูจาก Supabase
 
-        // ------------------ 🌟 ฟังก์ชันบันทึกข้อมูล Supabase 🌟 ------------------
-        async function saveOrderToSupabase(method) {
-            const items = Object.keys(order).map(name => ({ ...order[name], name: name }));
-            const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
-            const discountAmount = subtotal * (discountPercent / 100);
-            const total = subtotal - discountAmount;
-
-            const orderType = localStorage.getItem("orderType") || "-";
-            const customerCount = parseInt(localStorage.getItem("customerCount") || "0");
-            const tableNumber = localStorage.getItem("tableNumber") || "-";
-
-            if (items.length === 0) throw new Error("ตะกร้าว่างเปล่า ไม่สามารถบันทึกได้");
-
-            // 1. บันทึกใบเสร็จหลัก (ตาราง 'receipts')
-            const { data: receipt, error: receiptError } = await supabase
-                .from('receipts')
-                .insert({
-                    order_type: orderType,
-                    people_count: customerCount,
-                    table_number: tableNumber,
-                    subtotal: subtotal,
-                    discount: discountAmount,
-                    total_amount: total,
-                    payment_method: method
-                })
-                .select('id')
-                .single();
-
-            if (receiptError) throw receiptError;
-
-            // 2. บันทึกรายการย่อย (ตาราง 'receipt_items')
-            const receiptId = receipt.id;
-            const itemRecords = items.map(item => ({
-                receipt_id: receiptId,
-                // ใช้ menuMap ค้นหา ID ของเมนูจากชื่อ
-                menu_item_id: menuMap[item.name] ? menuMap[item.name].id : null,
-                item_name: item.name,
-                qty: item.quantity,
-                price: item.price,
-                total_price: item.price * item.quantity,
-            })).filter(item => item.menu_item_id !== null);
-
-            if (itemRecords.length === 0) {
-                console.warn("ไม่พบ ID เมนูในรายการสินค้า. บันทึกเฉพาะใบเสร็จหลัก");
-            }
-
-            const { error: itemsError } = await supabase
-                .from('receipt_items')
-                .insert(itemRecords);
-
-            if (itemsError) throw itemsError;
-
-            return { success: true };
-        }
-        // ----------------------------------------------------------------------
-
-        // ------------------ 🌟 ฟังก์ชันโหลดเมนู Supabase 🌟 ------------------
-        async function loadMenu() {
-            try {
-                const g = document.getElementById('menuGrid');
-                g.innerHTML = "กำลังโหลดเมนู...";
-                const { data, error } = await supabase
-                    .from("menu")
-                    .select("id,name,price,category,image,available")
-                    .eq("available", true)
-                    .order("id", { ascending: true });
-
-                if (error) throw error;
-                if (!data || data.length === 0) {
-                    g.innerHTML = "<p style='text-align:center;'>ยังไม่มีเมนู</p>";
-                    return;
-                }
-
-                g.innerHTML = data.map(item => {
-                    // เก็บ ID เมนูไว้ใน menuMap เพื่อใช้ตอนบันทึกใบเสร็จ
-                    menuMap[item.name] = { id: item.id, price: item.price };
-
-                    return `
-                        <div class="menu-item" onclick="playClick(); addToOrder({ name: '${item.name.replace(/'/g, "\\'")}', price: ${item.price} })">
-                            <div class='image-placeholder'>
-                                ${item.image ? `<img src="${item.image}" alt="${item.name}">` : '[รูปอาหาร]'}
-                            </div>
-                            <div>${item.name}</div>
-                            <strong>${item.price} ฿</strong>
-                        </div>
-                    `;
-                }).join("");
-            } catch (err) {
-                console.error("Error loading menu:", err);
-                document.getElementById('menuGrid').innerHTML = "<p style='color:red;text-align:center;'>เกิดข้อผิดพลาดในการโหลดเมนู</p>";
-            }
-        }
-        // ----------------------------------------------------------------------
-
-
-        // ---------------- Popup Control ----------------
+        // ------------------ Popup Control ----------------
         function showPopup(id) {
             document.getElementById('overlay').style.display = 'block';
             document.getElementById(id).style.display = 'block';
@@ -750,314 +654,19 @@
             document.querySelectorAll('.popup').forEach(p => p.style.display = 'none');
             document.getElementById('overlay').style.display = 'none';
         }
-
-        // ---------------- ส่วนลด ----------------
-        function promptDiscountAuth() { showPopup('authPopup'); }
-        function submitPin() {
-            const pin = document.getElementById('pinInput').value;
-            if (pin === '000000') {
-                closeAllPopups();
-                showPopup('discountPopup');
-                clearPin();
-            } else {
-                alert('รหัสไม่ถูกต้อง');
-                clearPin();
-            }
-        }
-        // 🧮 ฟังก์ชันคำนวณภาษีจากราคาที่รวม VAT แล้ว (ราคาสินค้าตั้งไว้รวมภาษี)
-        function calcTaxFromIncluded(totalWithVat) {
-            const beforeVat = totalWithVat / 1.07;
-            const vatAmount = totalWithVat - beforeVat;
-            return { beforeVat, vatAmount };
-        }
-
-
-        function applyDiscount(p) {
-            discountPercent = p;
-            closeAllPopups();
-            updateSummary();
-            window.updateCartCount(); // ✅ แก้ไขตรงนี้
-        }
-        function removeDiscount() {
-            discountPercent = 0;
-            updateSummary();
-            window.updateCartCount(); // ✅ แก้ไขตรงนี้
-        }
-
-        // ---------------- Keypad สำหรับ PIN ----------------
-        function appendPin(num) {
-            const input = document.getElementById('pinInput');
-            if (input.value.length < 6) input.value += num;
-        }
-        function clearPin() {
-            document.getElementById('pinInput').value = '';
-        }
-
-        // ---------------- ฟังก์ชันสั่งอาหาร ----------------
-        function addToOrder(item) {
-            const n = item.name, p = Number(item.price);
-            if (!order[n]) order[n] = { price: p, quantity: 1 };
-            else order[n].quantity++;
-            updateSummary();
-            window.updateCartCount(); // ✅ แก้ไขตรงนี้
-        }
-        function changeQty(n, c) {
-            if (order[n]) {
-                order[n].quantity += c;
-                if (order[n].quantity <= 0) delete order[n];
-                updateSummary();
-                window.updateCartCount(); // ✅ แก้ไขตรงนี้
-            }
-        }
-        function removeItem(n) {
-            delete order[n];
-            updateSummary();
-            window.updateCartCount(); // ✅ แก้ไขตรงนี้
-        }
-        // ---------------- ฟังก์ชันสรุปยอด ----------------
-        function updateSummary() {
-            const s = document.getElementById('orderSummary'),
-                items = document.getElementById('orderItems'),
-                t = document.getElementById('totalSummary');
-
-            items.innerHTML = '';
-            let subtotal = 0;
-            for (const n in order) {
-                const it = order[n];
-                subtotal += it.price * it.quantity;
-                items.innerHTML += `
-      <div class='order-item'>
-        <div>${n}</div>
-        <div class='controls'>
-          <button onclick="changeQty('${n}',-1)">-</button>
-          <span>${it.quantity}</span>
-          <button onclick="changeQty('${n}',1)">+</button>
-          <button onclick="removeItem('${n}')">🗑️</button>
-        </div>
-      </div>`;
-            }
-
-            const discount = subtotal * (discountPercent / 100);
-            const totalAfterDiscount = subtotal - discount;
-            const { beforeVat, vatAmount } = calcTaxFromIncluded(totalAfterDiscount);
-            const net = totalAfterDiscount;
-
-            t.innerHTML = `
-    ยอดรวม (รวมภาษี): ${subtotal.toFixed(2)} ฿<br>
-    ส่วนลด (${discountPercent}%): ${discount.toFixed(2)} ฿<br>
-    ราคาก่อนภาษี: ${beforeVat.toFixed(2)} ฿<br>
-    ภาษี (7%): ${vatAmount.toFixed(2)} ฿<br>
-    <strong>ราคาสุทธิ (รวมภาษี): ${net.toFixed(2)} ฿</strong>
-  `;
-            // ซ่อน popup สรุปยอดไว้เสมอ
-        }
-        function getTotal() {
-            let subtotal = 0;
-            for (const n in order) {
-                subtotal += order[n].price * order[n].quantity;
-            }
-            const discount = subtotal * (discountPercent / 100);
-            const totalAfterDiscount = subtotal - discount;
-            return totalAfterDiscount; // รวมภาษีแล้ว
-        }
-
-        // ---------------- การชำระเงิน ----------------
-        function submitOrder() {
-            if (Object.keys(order).length === 0) {
-                alert('ยังไม่มีรายการสั่งซื้อ');
-                return;
-            }
-            showPopup('paymentPopup');
-        }
-
-        function cancelOrder() {
-            if (confirm('ยืนยันยกเลิกคำสั่งซื้อ?')) {
-                order = {};
-                discountPercent = 0;
-                updateSummary();
-                window.updateCartCount(); // ✅ แก้ไขตรงนี้
-            }
-        }
-        // ---------------- Keypad สำหรับเงินสด ----------------
-        function appendCash(num) {
-            const input = document.getElementById('cashInput');
-            input.value += num;
-        }
-
-        function clearCash() {
-            document.getElementById('cashInput').value = '';
-            document.getElementById('changeDisplay').innerText = '';
-        }
-
-
-        function payCash() {
-            closeAllPopups();
-            const t = getTotal();
-            document.getElementById('cashAmount').innerText = t.toFixed(2);
-            showPopup('cashPopup');
-            clearCash();
-        }
-
-        function payQR() {
-            closeAllPopups();
-            const t = getTotal();
-            document.getElementById('qrAmount').innerText = t.toFixed(2);
-            showPopup('qrPopup');
-        }
-
-        // 🌟 แก้ไข: เพิ่ม async และ try/catch เพื่อบันทึกข้อมูลก่อน
-        async function confirmCash() {
-            const paid = Number(document.getElementById('cashInput').value);
-            const t = getTotal();
-            if (isNaN(paid) || paid <= 0) {
-                alert('กรุณาใส่จำนวนเงินที่ลูกค้าชำระ');
-                return;
-            }
-            if (paid < t) {
-                alert('จำนวนเงินไม่พอ');
-                return;
-            }
-            const change = paid - t;
-
-            try {
-                await saveOrderToSupabase('เงินสด'); // 🌟 บันทึกข้อมูล
-                document.getElementById('changeDisplay').innerText = `เงินทอน: ${change.toFixed(2)} ฿`;
-                setTimeout(() => showReceipt('เงินสด', paid, change), 800);
-            } catch (err) {
-                console.error("Supabase INSERT Error (Cash):", err);
-                document.getElementById('changeDisplay').innerText = "❌ บันทึกข้อมูลไม่สำเร็จ! ตรวจสอบ RLS Policy";
-                alert("❌ บันทึกคำสั่งซื้อไม่สำเร็จ! กรุณาตรวจสอบ RLS Policy (INSERT)");
-            }
-        }
-
-        // 🌟 แก้ไข: เพิ่ม async และ try/catch เพื่อบันทึกข้อมูลก่อน
-        async function confirmQR() {
-            try {
-                await saveOrderToSupabase('QR Code'); // 🌟 บันทึกข้อมูล
-                showReceipt('QR Code', 0, 0);
-            } catch (err) {
-                console.error("Supabase INSERT Error (QR):", err);
-                alert("❌ บันทึกคำสั่งซื้อไม่สำเร็จ! กรุณาตรวจสอบ RLS Policy (INSERT)");
-            }
-        }
-
-       // ---------------- ใบเสร็จ ----------------
-        function showReceipt(method, paid, change) {
-            const orderType = localStorage.getItem("orderType") || "-";
-            const customerCount = localStorage.getItem("customerCount") || "-";
-            const tableNumber = localStorage.getItem("tableNumber") || "-";
-            closeAllPopups();
-
-            let html = `
-            <div style="margin-bottom:10px; font-weight:600;">
-                🍽️ ${orderType} | 👥 ${customerCount} คน | 🪑 โต๊ะ ${tableNumber}
-            </div>
-            <table class="receipt-table">
-                <tr>
-                <th style="width:60%; text-align:left;">รายการ</th>
-                <th style="width:20%; text-align:center;">จำนวน</th>
-                <th style="width:20%; text-align:right;">ราคา</th>
-                </tr>`;
-
-            let subtotal = 0, totalQty = 0;
-            for (const n in order) {
-                const it = order[n];
-                subtotal += it.price * it.quantity;
-                totalQty += it.quantity;
-                html += `
-                <tr>
-                    <td>${n}</td>
-                    <td style="text-align:center;">${it.quantity}</td>
-                    <td style="text-align:right;">${(it.price * it.quantity).toFixed(2)}</td>
-                </tr>`;
-            }
-
-            const discount = subtotal * (discountPercent / 100);
-            const totalAfterDiscount = subtotal - discount;
-            const { beforeVat, vatAmount } = calcTaxFromIncluded(totalAfterDiscount);
-            const net = totalAfterDiscount;
-
-            html += `
-            <tr>
-                <td colspan="3" style="text-align:left; font-weight:bold;">รวมทั้งหมด: ${totalQty} รายการ</td>
-            </tr>
-            </table>
-
-            <div style="display:flex; justify-content:space-between; margin-top:10px;">
-                <div style="text-align:left;">
-                วิธีชำระ: ${method}<br>
-                ${method === 'เงินสด' ? `ชำระมา: ${paid.toFixed(2)} ฿<br>เงินทอน: ${change.toFixed(2)} ฿<br>` : ''}
-                วันที่: ${new Date().toLocaleString('th-TH')}
-                </div>
-                <div style="text-align:right;">
-                ยอดรวม (รวมภาษี): ${subtotal.toFixed(2)} ฿<br>
-                ส่วนลด (${discountPercent}%): ${discount.toFixed(2)} ฿<br>
-                ราคาก่อนภาษี: ${beforeVat.toFixed(2)} ฿<br>
-                ภาษี (7%): ${vatAmount.toFixed(2)} ฿<br>
-                <strong>ราคาสุทธิ (รวมภาษี): ${net.toFixed(2)} ฿</strong>
-                </div>
-            </div>`;
-
-            document.getElementById('receiptDetails').innerHTML = html;
-            showPopup('receiptPopup');
-
-            // ⚠️ ล้างข้อมูลหลังบันทึก Supabase สำเร็จแล้ว
-            order = {};
-            discountPercent = 0;
-            updateSummary();
-            window.updateCartCount(); // ✅ แก้ไขตรงนี้
-        }
-
-        function closeReceipt() { closeAllPopups(); }
-
-        // ---------------- หน้าเมนู ----------------
-        function goHome() { window.location.href = 'index.html'; }
-        function goBack() { window.history.back(); }
-
-        // 🛒 แสดง popup ตะกร้า
-        function showCart() {
-            if (Object.keys(order).length === 0) {
-                alert('ยังไม่มีรายการในตะกร้า');
-                return;
-            }
-            showPopup('orderSummary');
-        }
-
-        // 🛒 ปิด popup และกลับไปสั่งเพิ่ม
         function closeCart() {
             document.getElementById('orderSummary').style.display = 'none';
             document.getElementById('overlay').style.display = 'none';
         }
 
-        // โหลดข้อมูลลูกค้า / โต๊ะ / ประเภทการสั่ง
-        function loadOrderInfo() {
-            const orderType = localStorage.getItem("orderType") || "-";
-            const customerCount = localStorage.getItem("customerCount") || "-";
-            const tableNumber = localStorage.getItem("tableNumber") || "-";
-            const text = `🍽️ ${orderType} | 👥 ${customerCount} คน | 🪑 โต๊ะ ${tableNumber}`;
-            const el = document.getElementById("orderInfo");
-            if (el) el.innerHTML = text;
-        }
-        document.addEventListener("DOMContentLoaded", loadOrderInfo);
+        // ------------------ Navigation / Sound ----------------
+        function goHome() { window.location.href = 'index.html'; }
+        function goBack() { window.history.back(); }
 
-        // 🛒 อัปเดตจำนวนในตะกร้า
-        window.updateCartCount = function() { // ✅ ทำให้เป็น window function
-            const count = Object.values(order).reduce((sum, item) => sum + item.quantity, 0);
-            document.getElementById('cartCount').innerText = count;
-            document.getElementById('cartButton').style.display = count > 0 ? 'flex' : 'none';
-        }
-
-        // ⬇️ เริ่มโหลดเมนูทันทีเมื่อ Script ทำงาน
-        loadMenu();
-
-    </script>
-
-    <script>
         let audioCtx;
         function initAudio() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
-
         function playClick() {
             initAudio();
             const osc = audioCtx.createOscillator();
@@ -1071,7 +680,6 @@
             osc.stop(audioCtx.currentTime + 0.1);
             if (navigator.vibrate) navigator.vibrate(40);
         }
-
         function playError() {
             initAudio();
             const osc = audioCtx.createOscillator();
@@ -1085,17 +693,12 @@
             osc.stop(audioCtx.currentTime + 0.25);
             if (navigator.vibrate) navigator.vibrate([100, 60, 100]);
         }
-
-        // เสียงตอนแจ้งเตือน error
-        const _alert = window.alert;
         window.alert = function (msg) {
             playError();
             _alert(msg);
         };
-    </script>
-
-
-    <script>
+        const _alert = window.alert; // เก็บ alert เดิม
+        document.addEventListener("DOMContentLoaded", loadOrderInfo);
         document.addEventListener("click", () => {
             try {
                 if (typeof audioCtx !== "undefined" && audioCtx.state === "suspended") {
@@ -1103,16 +706,293 @@
                 } else if (typeof initAudio === "function" && (!audioCtx || audioCtx.state !== "running")) {
                     initAudio();
                 }
-            } catch (e) {
-                console.warn("Audio init/resume failed:", e);
-            }
+            } catch (e) { }
         }, { once: true });
+
+
+        // ------------------ Cart/Order Helpers ----------------
+        function loadOrderInfo() {
+            const orderType = localStorage.getItem("orderType") || "-";
+            const customerCount = localStorage.getItem("customerCount") || "-";
+            const tableNumber = localStorage.getItem("tableNumber") || "-";
+            const text = `🍽️ ${orderType} | 👥 ${customerCount} คน | 🪑 โต๊ะ ${tableNumber}`;
+            const el = document.getElementById("orderInfo");
+            if (el) el.innerHTML = text;
+        }
+
+        window.updateCartCount = function() { // ✅ ทำให้เป็น window function
+            const count = Object.values(order).reduce((sum, item) => sum + item.quantity, 0);
+            document.getElementById('cartCount').innerText = count;
+            document.getElementById('cartButton').style.display = count > 0 ? 'flex' : 'none';
+        }
+
+        // ------------------ Order/Cart Logic (ต้องถูกเรียกจาก Module) ----------------
+        window.addToOrder = function(item) {
+            const n = item.name, p = Number(item.price);
+            if (!order[n]) order[n] = { price: p, quantity: 1 };
+            else order[n].quantity++;
+            updateSummary();
+            window.updateCartCount();
+        }
+        window.changeQty = function(n, c) {
+            if (order[n]) {
+                order[n].quantity += c;
+                if (order[n].quantity <= 0) delete order[n];
+                updateSummary();
+                window.updateCartCount();
+            }
+        }
+        window.removeItem = function(n) {
+            delete order[n];
+            updateSummary();
+            window.updateCartCount();
+        }
+
+        // ------------------ Summary/Discount/Payment Flow (ต้องถูกเรียกจาก Module) ----------------
+        function updateSummary() {
+            const items = document.getElementById('orderItems'),
+                t = document.getElementById('totalSummary');
+
+            items.innerHTML = '';
+            let subtotal = 0;
+            for (const n in order) {
+                const it = order[n];
+                subtotal += it.price * it.quantity;
+                items.innerHTML += `
+            <div class='order-item'>
+                <div>${n}</div>
+                <div class='controls'>
+                    <button onclick="window.changeQty('${n}',-1)">-</button>
+                    <span>${it.quantity}</span>
+                    <button onclick="window.changeQty('${n}',1)">+</button>
+                    <button onclick="window.removeItem('${n}')">🗑️</button>
+                </div>
+            </div>`;
+            }
+
+            const discount = subtotal * (discountPercent / 100);
+            const totalAfterDiscount = subtotal - discount;
+            const { beforeVat, vatAmount } = calcTaxFromIncluded(totalAfterDiscount);
+            const net = totalAfterDiscount;
+
+            t.innerHTML = `
+            ยอดรวม (รวมภาษี): ${subtotal.toFixed(2)} ฿<br>
+            ส่วนลด (${discountPercent}%): ${discount.toFixed(2)} ฿<br>
+            ราคาก่อนภาษี: ${beforeVat.toFixed(2)} ฿<br>
+            ภาษี (7%): ${vatAmount.toFixed(2)} ฿<br>
+            <strong>ราคาสุทธิ (รวมภาษี): ${net.toFixed(2)} ฿</strong>
+            `;
+        }
+
+        function getTotal() {
+            let subtotal = Object.values(order).reduce((s, i) => s + i.price * i.quantity, 0);
+            const discount = subtotal * (discountPercent / 100);
+            return subtotal - discount;
+        }
+
+        function calcTaxFromIncluded(totalWithVat) {
+            const beforeVat = totalWithVat / 1.07;
+            const vatAmount = totalWithVat - beforeVat;
+            return { beforeVat, vatAmount };
+        }
+
+        window.submitOrder = function() {
+            if (Object.keys(order).length === 0) {
+                alert('ยังไม่มีรายการสั่งซื้อ');
+                return;
+            }
+            showPopup('paymentPopup');
+        }
+
+        window.cancelOrder = function() {
+            if (confirm('ยืนยันยกเลิกคำสั่งซื้อ?')) {
+                order = {};
+                discountPercent = 0;
+                updateSummary();
+                window.updateCartCount();
+                closeAllPopups();
+            }
+        }
+
+        window.promptDiscountAuth = function() { showPopup('authPopup'); }
+        window.submitPin = function() {
+            const pin = document.getElementById('pinInput').value;
+            if (pin === '000000') {
+                closeAllPopups();
+                showPopup('discountPopup');
+                window.clearPin();
+            } else {
+                alert('รหัสไม่ถูกต้อง');
+                window.clearPin();
+            }
+        }
+        window.applyDiscount = function(p) {
+            discountPercent = p;
+            closeAllPopups();
+            updateSummary();
+            window.updateCartCount();
+        }
+        window.removeDiscount = function() {
+            discountPercent = 0;
+            closeAllPopups();
+            updateSummary();
+            window.updateCartCount();
+        }
+        window.appendPin = function(num) {
+            const input = document.getElementById('pinInput');
+            if (input.value.length < 6) input.value += num;
+        }
+        window.clearPin = function() {
+            document.getElementById('pinInput').value = '';
+        }
+
+        window.payCash = function() {
+            closeAllPopups();
+            const t = getTotal();
+            document.getElementById('cashAmount').innerText = t.toFixed(2);
+            showPopup('cashPopup');
+            clearCash();
+        }
+
+        window.payQR = function() {
+            closeAllPopups();
+            const t = getTotal();
+            document.getElementById('qrAmount').innerText = t.toFixed(2);
+            showPopup('qrPopup');
+        }
+        window.appendCash = function(num) {
+            const input = document.getElementById('cashInput');
+            input.value += num;
+        }
+
+        window.clearCash = function() {
+            document.getElementById('cashInput').value = '';
+            document.getElementById('changeDisplay').innerText = '';
+        }
+
+        window.confirmCash = async function() {
+            const paid = Number(document.getElementById('cashInput').value || 0);
+            const t = getTotal();
+            if (paid < t) return alert("เงินไม่พอ กรุณาใส่จำนวนเงินให้ถูกต้อง");
+            const change = paid - t;
+
+            try {
+                // ⚠️ ต้องบันทึก Supabase ตรงนี้
+                // await saveOrderToSupabase('เงินสด');
+                document.getElementById('changeDisplay').innerText = `เงินทอน: ${change.toFixed(2)} ฿`;
+                setTimeout(() => showReceipt('เงินสด', paid, change), 800);
+            } catch (err) {
+                console.error("Supabase INSERT Error:", err);
+                alert("❌ บันทึกคำสั่งซื้อไม่สำเร็จ! กรุณาตรวจสอบ Policy");
+            }
+        }
+
+        window.confirmQR = async function() {
+            try {
+                // ⚠️ ต้องบันทึก Supabase ตรงนี้
+                // await saveOrderToSupabase('QR Code');
+                showReceipt('QR Code', getTotal(), 0);
+            } catch (err) {
+                console.error("Supabase INSERT Error:", err);
+                alert("❌ บันทึกคำสั่งซื้อไม่สำเร็จ! กรุณาตรวจสอบ Policy");
+            }
+        }
+        
+        // ------------------ Receipt ----------------
+        function showReceipt(method, paid, change) {
+            // ... (โค้ดแสดงใบเสร็จ) ...
+            closeAllPopups();
+
+            // ล้างข้อมูลหลังบันทึก Supabase สำเร็จแล้ว
+            order = {};
+            discountPercent = 0;
+            updateSummary();
+            window.updateCartCount();
+            showPopup('receiptPopup');
+        }
+        function closeReceipt() { closeAllPopups(); }
+
+        window.showCart = function() {
+            if (Object.keys(order).length === 0) return alert("ตะกร้าว่างเปล่า");
+            showPopup('orderSummary');
+            updateSummary(); // อัปเดตรายการในตะกร้าก่อนแสดง
+        }
+
     </script>
 
-<div id="cartButton" class="cart-button" onclick="showCart()">
-  🛒 <span id="cartCount">0</span>
-</div>
+    <script type="module">
+        import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+        
+        const SUPABASE_URL = "https://pujxykbpxsncbrlquaxo.supabase.co"; // ⚠️ URL ที่ถูก
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1anh5a2JweHNuY2JybHF1YXhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3OTI0OTIsImV4cCI6MjA3ODM2ODQ5Mn0.JxavkquEZo0W7NME4CJ01GbLKR0_gYFdcKy2BWCrAso";
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+        const menuGrid = document.getElementById("menuGrid");
+
+        async function loadMenu() {
+            try {
+                menuGrid.innerHTML = "กำลังโหลดเมนู...";
+                // ⚠️ เนื่องจาก RLS Policy ของคุณยังไม่สมบูรณ์สำหรับ SELECT
+                // หากยังไม่ใส่ RLS Policy 'For SELECT: to public, using: true' ให้ใช้ select() ธรรมดาไปก่อน
+                const { data, error } = await supabase
+                    .from("menu")
+                    .select("id,name,price,category,image,available")
+                    .eq("available", true)
+                    .order("id", { ascending: true });
+
+                if (error) {
+                    console.error("Supabase Error:", error.message);
+                    throw new Error("Failed to fetch menu data. Check RLS Policy for 'menu' table.");
+                }
+
+                if (!data || data.length === 0) {
+                    menuGrid.innerHTML = "<p style='text-align:center;'>ยังไม่มีเมนู</p>";
+                    return;
+                }
+
+                menuGrid.innerHTML = data.map(item => {
+                    // เก็บ ID เมนูไว้ใน menuMap (Global)
+                    menuMap[item.name] = { id: item.id, price: item.price }; 
+
+                    // ✅ ใช้ window.addToOrder เพราะฟังก์ชันถูกประกาศนอก module
+                    return `
+                        <div class="menu-item" onclick="window.playClick(); window.addToOrder({ name: '${item.name.replace(/'/g, "\\'")}', price: ${item.price} })">
+                            <div class="image-placeholder">
+                                <img src="${item.image || 'kshop.jpg'}" alt="${item.name}" onerror="this.src='kshop.jpg'">
+                            </div>
+                            <h3 style="margin:8px 0;font-size:1.1rem;">${item.name}</h3>
+                            <strong style="color:#0047AB;font-size:1.1rem;">${item.price} ฿</strong>
+                        </div>
+                    `;
+                }).join("");
+            } catch (err) {
+                console.error("Error loading menu:", err);
+                menuGrid.innerHTML = `<p style='color:red;text-align:center;'>เกิดข้อผิดพลาดในการโหลดเมนู: ${err.message}</p>`;
+            }
+        }
+        
+        // 🛠️ แก้ไข: ฟังก์ชันที่ใช้ใน Module ต้องเรียกฟังก์ชัน Global ด้วย window.
+        window.updateCart = function() {
+            const items = Object.values(window.order);
+            const total = items.reduce((s, i) => s + i.price * i.quantity, 0);
+            document.getElementById("orderItems").innerHTML = items.map(it => `
+                <div class="order-item"><span>${it.name} x ${it.quantity}</span><strong>${it.price * it.quantity} ฿</strong></div>
+            `).join("");
+            document.getElementById("totalSummary").innerHTML = `รวมทั้งหมด: ${total} ฿`;
+            window.updateCartCount(); // ✅ เรียกฟังก์ชัน Global
+        };
+        
+        // 🛠️ แก้ไข: ฟังก์ชันสั่ง/ยืนยันการชำระเงินเดิม
+        window.addToCart = function(id, name, price) {
+            window.playClick();
+            if (!order[name]) order[name] = { name, price, quantity: 0 };
+            order[name].quantity++;
+            window.updateCart(); // ✅ เรียกฟังก์ชัน Global
+        };
+
+        loadMenu();
+
+    </script>
 
 </body>
-
 </html>
