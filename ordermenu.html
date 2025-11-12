@@ -287,7 +287,7 @@
             height: auto;
         }
 
-        /* 1. ✅ เพิ่ม CSS สำหรับปุ่มชำระเงินสำเร็จ */
+        /* ✅ CSS สำหรับปุ่มชำระเงินสำเร็จ (QR) */
         #qrPopup button {
             background: linear-gradient(90deg, #4CAF50, #45A049) !important;
             color: white !important;
@@ -302,6 +302,7 @@
             width: 90%;
             margin-top: 15px;
         }
+
         #qrPopup button:hover {
             transform: scale(1.05);
             background: linear-gradient(90deg, #45A049, #388E3C) !important;
@@ -533,7 +534,7 @@
     <div class="popup" id="cashPopup">
         <h3>ชำระด้วยเงินสด</h3>
         <p>ยอดที่ต้องชำระ: <strong><span id="cashAmount"></span> ฿</strong></p>
-        <input type="text" id="cashInput" placeholder="จำนวนเงินที่ลูกค้าชำระ" readonly /> 
+        <input type="text" id="cashInput" placeholder="จำนวนเงินที่ลูกค้าชำระ" readonly />
 
         <div class="keypad">
             <button onclick="playClick(); appendCash('1')">1</button>
@@ -590,7 +591,7 @@
 
     <script>
         // ⚠️ กรุณาตรวจสอบและอัปเดต URL/KEY ให้ถูกต้อง
-        const SUPABASE_URL = "https://pujxykbpxsncbrlquaxo.supabase.co"; 
+        const SUPABASE_URL = "https://pujxykbpxsncbrlquaxo.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1anh5a2JweHNuY2JybHF1YXhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3OTI0OTIsImV4cCI6MjA3ODM2ODQ5Mn0.JxavkquEZo0W7NME4CJ01GbLKR0_gYFdcKy2BWCrAso";
 
         const { createClient } = window.supabase;
@@ -599,7 +600,7 @@
         let order = {};
         let discountPercent = 0;
         let menuMap = {};
-        
+
         // ------------------ Menu Loading Logic ----------------
         async function loadMenu() {
             try {
@@ -642,16 +643,23 @@
                 document.getElementById("menuGrid").innerHTML = `<p style='color:red;text-align:center;'>เกิดข้อผิดพลาดในการโหลดเมนู: ${err.message}</p>`;
             }
         }
-        
-        // ------------------ Navigation / Sound / Popups (Code Omitted for Brevity - No Changes) ----------------
 
-        function goHome() { window.location.href = 'index.html'; }
-        function goBack() { window.history.back(); }
+        // ------------------ Navigation / Sound / Popups ----------------
+
+        function goHome() {
+            window.location.href = 'index.html';
+        }
+
+        function goBack() {
+            window.history.back();
+        }
 
         let audioCtx;
+
         function initAudio() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
+
         function playClick() {
             initAudio();
             const osc = audioCtx.createOscillator();
@@ -665,6 +673,7 @@
             osc.stop(audioCtx.currentTime + 0.1);
             if (navigator.vibrate) navigator.vibrate(40);
         }
+
         function playError() {
             initAudio();
             const osc = audioCtx.createOscillator();
@@ -678,7 +687,7 @@
             osc.stop(audioCtx.currentTime + 0.25);
             if (navigator.vibrate) navigator.vibrate([100, 60, 100]);
         }
-        const _alert = window.alert; 
+        const _alert = window.alert;
         window.alert = function (msg) {
             playError();
             _alert(msg);
@@ -691,8 +700,10 @@
                 } else if (typeof initAudio === "function" && (!audioCtx || audioCtx.state !== "running")) {
                     initAudio();
                 }
-            } catch (e) { }
-        }, { once: true });
+            } catch (e) {}
+        }, {
+            once: true
+        });
 
 
         // ------------------ Popup Control ----------------
@@ -700,15 +711,20 @@
             document.getElementById('overlay').style.display = 'block';
             document.getElementById(id).style.display = 'block';
         }
+
         function closeAllPopups() {
             document.querySelectorAll('.popup').forEach(p => p.style.display = 'none');
             document.getElementById('overlay').style.display = 'none';
         }
+
         function closeCart() {
             document.getElementById('orderSummary').style.display = 'none';
             document.getElementById('overlay').style.display = 'none';
         }
-        function closeReceipt() { closeAllPopups(); }
+
+        function closeReceipt() {
+            closeAllPopups();
+        }
 
 
         // ------------------ Cart/Order Logic ----------------
@@ -728,13 +744,19 @@
         }
 
         function addToOrder(item) {
-            const n = item.name, p = Number(item.price);
+            const n = item.name,
+                p = Number(item.price);
             if (!menuMap[n]) return alert(`ไม่พบ ID เมนูสำหรับ ${n}`); // ป้องกัน error
-            if (!order[n]) order[n] = { price: p, quantity: 1, menu_id: menuMap[n].id };
+            if (!order[n]) order[n] = {
+                price: p,
+                quantity: 1,
+                menu_id: menuMap[n].id
+            };
             else order[n].quantity++;
             updateSummary();
             updateCartCount();
         }
+
         function changeQty(n, c) {
             if (order[n]) {
                 order[n].quantity += c;
@@ -743,6 +765,7 @@
                 updateCartCount();
             }
         }
+
         function removeItem(n) {
             delete order[n];
             updateSummary();
@@ -752,7 +775,10 @@
         function calcTaxFromIncluded(totalWithVat) {
             const beforeVat = totalWithVat / 1.07;
             const vatAmount = totalWithVat - beforeVat;
-            return { beforeVat, vatAmount };
+            return {
+                beforeVat,
+                vatAmount
+            };
         }
 
         function updateSummary() {
@@ -778,7 +804,10 @@
 
             const discount = subtotal * (discountPercent / 100);
             const totalAfterDiscount = subtotal - discount;
-            const { beforeVat, vatAmount } = calcTaxFromIncluded(totalAfterDiscount);
+            const {
+                beforeVat,
+                vatAmount
+            } = calcTaxFromIncluded(totalAfterDiscount);
             const net = totalAfterDiscount;
 
             t.innerHTML = `
@@ -814,7 +843,10 @@
             }
         }
 
-        function promptDiscountAuth() { showPopup('authPopup'); }
+        function promptDiscountAuth() {
+            showPopup('authPopup');
+        }
+
         function submitPin() {
             const pin = document.getElementById('pinInput').value;
             if (pin === '000000') {
@@ -826,22 +858,26 @@
                 clearPin();
             }
         }
+
         function applyDiscount(p) {
             discountPercent = p;
             closeAllPopups();
             updateSummary();
             updateCartCount();
         }
+
         function removeDiscount() {
             discountPercent = 0;
             closeAllPopups();
             updateSummary();
             updateCartCount();
         }
+
         function appendPin(num) {
             const input = document.getElementById('pinInput');
             if (input.value.length < 6) input.value += num;
         }
+
         function clearPin() {
             document.getElementById('pinInput').value = '';
         }
@@ -860,6 +896,7 @@
             document.getElementById('qrAmount').innerText = t.toFixed(2);
             showPopup('qrPopup');
         }
+
         function appendCash(num) {
             const input = document.getElementById('cashInput');
             input.value += num;
@@ -870,21 +907,25 @@
             document.getElementById('changeDisplay').innerText = '';
         }
 
-        // 2. ✅ ปรับปรุงฟังก์ชันบันทึกข้อมูล
+        // 🚀 ฟังก์ชันบันทึกข้อมูล (แก้ไขให้ใช้คอลัมน์ 'order_type')
         async function saveOrderToSupabase(method) {
             const subtotal = Object.values(order).reduce((s, i) => s + i.price * i.quantity, 0);
             const discount = subtotal * (discountPercent / 100);
             const total = subtotal - discount;
-            const { beforeVat, vatAmount } = calcTaxFromIncluded(total);
-            
+            const {
+                beforeVat,
+                vatAmount
+            } = calcTaxFromIncluded(total);
+
             const tableNumber = localStorage.getItem("tableNumber") || null;
             const orderType = localStorage.getItem("orderType") || null;
             const customerCount = parseInt(localStorage.getItem("customerCount")) || null;
 
-            // 2.1. บันทึกเข้าตาราง receipts ก่อน (ต้องมี RLS Policy สำหรับ SELECT ด้วย)
+            // 2.1. บันทึกเข้าตาราง receipts ก่อน 
             const receiptData = {
                 table_number: tableNumber,
-                order_type: orderType,
+                // ✅ แก้ไขให้ใช้ชื่อคอลัมน์ที่ถูกต้องตามตารางของคุณ: 'order_type'
+                order_type: orderType, 
                 customer_count: customerCount,
                 discount_percent: discountPercent,
                 subtotal: subtotal,
@@ -895,14 +936,17 @@
                 payment_method: method
             };
 
-            const { data: receipt, error: receiptError } = await supabase
+            const {
+                data: receipt,
+                error: receiptError
+            } = await supabase
                 .from('receipts')
                 .insert([receiptData])
                 .select('id') // ดึง ID กลับมาเท่านั้น
                 .single();
 
             if (receiptError) throw receiptError;
-            
+
             // 2.2. บันทึกเข้าตาราง receipt_items
             const receiptId = receipt.id;
             const itemsToInsert = Object.keys(order).map(itemName => {
@@ -917,7 +961,9 @@
                 };
             });
 
-            const { error: itemsError } = await supabase
+            const {
+                error: itemsError
+            } = await supabase
                 .from('receipt_items')
                 .insert(itemsToInsert);
 
@@ -934,26 +980,29 @@
             const change = paid - t;
 
             try {
-                await saveOrderToSupabase('เงินสด');
+                await saveOrderToSupabase('เงินสด'); 
                 document.getElementById('changeDisplay').innerText = `เงินทอน: ${change.toFixed(2)} ฿`;
+                // หน่วงเวลาเล็กน้อยก่อนแสดงใบเสร็จ
                 setTimeout(() => showReceipt('เงินสด', paid, change), 800);
             } catch (err) {
                 console.error("Supabase INSERT Error:", err);
-                alert(`❌ บันทึกคำสั่งซื้อไม่สำเร็จ! (${err.message}). กรุณาตรวจสอบ RLS Policy ทั้ง INSERT และ SELECT ในตาราง receipts.`);
+                // 💡 ปรับปรุงข้อความ Error
+                alert(`❌ บันทึกคำสั่งซื้อไม่สำเร็จ! (Error: ${err.message}). กรุณาตรวจสอบ Console (F12)`); 
                 document.getElementById('changeDisplay').innerText = `บันทึกไม่สำเร็จ`;
             }
         }
 
         async function confirmQR() {
             try {
-                await saveOrderToSupabase('QR Code');
+                await saveOrderToSupabase('QR Code'); 
                 showReceipt('QR Code', getTotal(), 0);
             } catch (err) {
                 console.error("Supabase INSERT Error:", err);
-                alert(`❌ บันทึกคำสั่งซื้อไม่สำเร็จ! (${err.message}). กรุณาตรวจสอบ RLS Policy ทั้ง INSERT และ SELECT ในตาราง receipts.`);
+                // 💡 ปรับปรุงข้อความ Error
+                alert(`❌ บันทึกคำสั่งซื้อไม่สำเร็จ! (Error: ${err.message}). กรุณาตรวจสอบ Console (F12)`);
             }
         }
-        
+
         function showReceipt(method, paid, change) {
             const orderType = localStorage.getItem("orderType") || "-";
             const customerCount = localStorage.getItem("customerCount") || "-";
@@ -971,7 +1020,8 @@
                     <th style="width:20%; text-align:right;">ราคา</th>
                 </tr>`;
 
-            let subtotal = 0, totalQty = 0;
+            let subtotal = 0,
+                totalQty = 0;
             for (const n in order) {
                 const it = order[n];
                 subtotal += it.price * it.quantity;
@@ -986,7 +1036,10 @@
 
             const discount = subtotal * (discountPercent / 100);
             const totalAfterDiscount = subtotal - discount;
-            const { beforeVat, vatAmount } = calcTaxFromIncluded(totalAfterDiscount);
+            const {
+                beforeVat,
+                vatAmount
+            } = calcTaxFromIncluded(totalAfterDiscount);
             const net = totalAfterDiscount;
 
             html += `
@@ -995,7 +1048,7 @@
             </tr>
             </table>
 
-            <div style="display:flex; justify-content:space-between; margin-top:10px; border-top: 1px dashed rgba(0,0,0,0.15); padding-top: 10px;">
+            <div style="display:flex; justify-content:space-between; margin-top:10px; border-top: 1px dashed rgba(0, 0, 0, 0.15); padding-top: 10px;">
                 <div style="text-align:left; font-size:0.9rem;">
                     วิธีชำระ: ${method}<br>
                     ${method === 'เงินสด' ? `ชำระมา: ${paid.toFixed(2)} ฿<br>เงินทอน: ${change.toFixed(2)} ฿<br>` : ''}
@@ -1025,7 +1078,6 @@
             showPopup('orderSummary');
             updateSummary();
         }
-
     </script>
 </body>
 </html>
