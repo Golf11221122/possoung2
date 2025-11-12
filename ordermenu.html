@@ -614,13 +614,13 @@
                     .order("id", { ascending: true });
 
                 if (error) {
-                    console.error("Supabase Error (Menu):", error.message);
-                    menuGrid.innerHTML = `<p style='color:red;text-align:center;'>❌ ผิดพลาด: ${error.message} (ตรวจสอบ RLS Policy ตาราง menu)</p>`;
+                    console.error("Supabase Error (Menu Load):", error.message);
+                    menuGrid.innerHTML = `<p style='color:red;text-align:center;'>❌ ผิดพลาดในการดึงเมนู: ${error.message} (ตรวจสอบ URL/KEY หรือ RLS Policy ตาราง menu: SELECT)</p>`;
                     return;
                 }
 
                 if (!data || data.length === 0) {
-                    menuGrid.innerHTML = "<p style='text-align:center;'>ยังไม่มีเมนู</p>";
+                    menuGrid.innerHTML = "<p style='text-align:center;'>ยังไม่มีเมนูที่ 'available'</p>";
                     return;
                 }
 
@@ -629,11 +629,17 @@
                     menuMap[item.name] = { id: item.id, price: item.price };
                 });
                 
+                // **✅ DEBUG: แสดง menuMap ใน Console เพื่อตรวจสอบ**
+                console.log("MenuMap สร้างสำเร็จ:", menuMap);
+
                 menuGrid.innerHTML = data.map(item => {
                     const imageUrl = item.image || 'kshop.jpg';
 
+                    // ใช้ item.name ที่สะอาดสำหรับการสร้าง HTML (escape single quotes)
+                    const cleanName = item.name.replace(/'/g, "\\'"); 
+
                     return `
-                        <div class="menu-item" onclick="playClick(); addToOrder({ name: '${item.name.replace(/'/g, "\\'")}', price: ${item.price} })">
+                        <div class="menu-item" onclick="playClick(); addToOrder({ name: '${cleanName}', price: ${item.price} })">
                             <div class="image-placeholder">
                                 <img src="${imageUrl}" alt="${item.name}" onerror="this.src='kshop.jpg'">
                             </div>
@@ -754,8 +760,8 @@
             // **🛑 การตรวจสอบ menu_id อย่างเข้มงวด**
             const menuInfo = menuMap[n];
             if (!menuInfo || typeof menuInfo.id === 'undefined' || menuInfo.id === null) {
-                alert(`❌ ผิดพลาด: ไม่พบรหัส ID ของเมนู "${n}" ในระบบ (menuMap[${n}].id)`); 
-                console.error("เมนู ID หาย:", n, menuMap[n]);
+                alert(`❌ ผิดพลาด: ไม่พบรหัส ID ของเมนู "${n}" ในระบบ (menuMap ว่างเปล่าหรือไม่?)`); 
+                console.error("เมนู ID หาย:", n, menuMap);
                 return;
             }
 
@@ -866,7 +872,8 @@
 
         function submitPin() {
             const pin = document.getElementById('pinInput').value;
-            if (pin === '000000') {
+            // ⚠️ HARDCODED PIN - ควรเปลี่ยนเป็นระบบจริงในอนาคต
+            if (pin === '000000') { 
                 closeAllPopups();
                 showPopup('discountPopup');
                 clearPin();
@@ -982,11 +989,11 @@
                 
                 // **🛑 การตรวจสอบและดึง menu_id อย่างรอบคอบ**
                 const menuInfo = menuMap[itemName];
-                const finalMenuId = (menuInfo && menuInfo.id) ? menuInfo.id : item.menu_id;
+                const finalMenuId = (menuInfo && typeof menuInfo.id !== 'undefined' && menuInfo.id !== null) ? menuInfo.id : item.menu_id;
 
                 if (typeof finalMenuId === 'undefined' || finalMenuId === null) {
-                     console.error(`❌ ข้ามรายการ: ${itemName} เพราะไม่พบ menu_id ที่ถูกต้อง (menuMap หรือ order object)`);
-                     // **สำคัญ:** หากหา ID ไม่ได้ ต้องข้ามรายการนี้ไป ไม่ใช่ส่ง null
+                     console.error(`❌ ข้ามรายการ: ${itemName} เพราะไม่พบ menu_id ที่ถูกต้อง (menuMap หรือ order object ว่างเปล่า?)`);
+                     // **สำคัญ:** หากหา ID ไม่ได้ ต้องข้ามรายการนี้ไป
                      return null; 
                 }
 
@@ -1002,10 +1009,10 @@
 
             // **🛑 ป้องกันกรณี itemsToInsert เป็นอาร์เรย์ว่าง**
             if (itemsToInsert.length === 0) {
-                 // หากไม่มีรายการสินค้าที่ถูกต้องให้บันทึก (เพราะถูกกรองออกหมด)
-                 console.warn("ไม่มีรายการสินค้าที่ถูกต้องให้บันทึกใน receipt_items!");
-                 // สามารถเพิ่มโค้ดลบ receipt ที่บันทึกไปก่อนหน้าได้ ถ้าต้องการ
-                 return receiptId; 
+                 console.warn("ไม่มีรายการสินค้าที่ถูกต้องให้บันทึกใน receipt_items! (ยกเลิกใบเสร็จ...)");
+                 // ⚠️ ถ้าไม่บันทึกรายการสินค้า ต้องลบใบเสร็จหลักทิ้งด้วย
+                 await supabase.from('receipts').delete().eq('id', receiptId);
+                 throw new Error("ไม่สามารถบันทึกรายการสินค้าได้เนื่องจากขาด menu_id");
             }
 
             const {
@@ -1016,7 +1023,9 @@
 
             if (itemsError) {
                 console.error("Supabase Item INSERT Error:", itemsError);
-                alert(`❌ บันทึกรายการสินค้าไม่สำเร็จ! (Error: ${itemsError.message}). กรุณาตรวจสอบ Console (F12)`);
+                // ⚠️ หากบันทึกรายการสินค้าล้มเหลว ต้องลบใบเสร็จหลักทิ้งด้วย
+                await supabase.from('receipts').delete().eq('id', receiptId); 
+                alert(`❌ บันทึกรายการสินค้าไม่สำเร็จ! (Error: ${itemsError.message}). ใบเสร็จถูกยกเลิก.`);
                 throw itemsError;
             }
 
@@ -1032,18 +1041,27 @@
             const change = paid - t;
 
             try {
+                // **🛑 เพิ่มการตรวจสอบ: ถ้า menuMap ยังว่างอยู่ ให้ alert**
+                 if (Object.keys(menuMap).length === 0) {
+                     throw new Error("เมนูยังไม่ถูกโหลด. กรุณารีโหลดหน้าและลองใหม่.");
+                 }
+
                 await saveOrderToSupabase('เงินสด'); 
                 document.getElementById('changeDisplay').innerText = `เงินทอน: ${change.toFixed(2)} ฿`;
                 setTimeout(() => showReceipt('เงินสด', paid, change), 800);
             } catch (err) {
                 console.error("Supabase INSERT Error:", err);
-                // alert ถูกเรียกใน saveOrderToSupabase แล้ว
                 document.getElementById('changeDisplay').innerText = `บันทึกไม่สำเร็จ`;
             }
         }
 
         async function confirmQR() {
             try {
+                 // **🛑 เพิ่มการตรวจสอบ: ถ้า menuMap ยังว่างอยู่ ให้ alert**
+                 if (Object.keys(menuMap).length === 0) {
+                     throw new Error("เมนูยังไม่ถูกโหลด. กรุณารีโหลดหน้าและลองใหม่.");
+                 }
+
                 await saveOrderToSupabase('QR Code'); 
                 showReceipt('QR Code', getTotal(), 0);
             } catch (err) {
