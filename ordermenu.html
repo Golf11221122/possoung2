@@ -731,7 +731,7 @@
         function loadOrderInfo() {
             const orderType = localStorage.getItem("orderType") || "-";
             const customerCount = localStorage.getItem("customerCount") || "-";
-            const tableNumber = localStorage.getItem("tableNumber") || "-";
+            const tableNumber = localStorage.getItem("tableNumber") || "N/A"; // ✅ ใช้ 'N/A' แทนค่าว่าง
             const text = `🍽️ ${orderType} | 👥 ${customerCount} คน | 🪑 โต๊ะ ${tableNumber}`;
             const el = document.getElementById("orderInfo");
             if (el) el.innerHTML = text;
@@ -914,7 +914,7 @@
             document.getElementById('changeDisplay').innerText = '';
         }
 
-        // 🚀 ฟังก์ชันบันทึกข้อมูล (แก้ไข total_amount และใช้คอลัมน์ 'order_type')
+        // 🚀 ฟังก์ชันบันทึกข้อมูล (แก้ไข table_number, total_amount, และ order_type)
         async function saveOrderToSupabase(method) {
             // 1. คำนวณค่าทั้งหมด
             const subtotal = Object.values(order).reduce((s, i) => s + i.price * i.quantity, 0);
@@ -931,11 +931,12 @@
             const {
                 beforeVat,
                 vatAmount
-            } = calcTaxFromIncluded(total); // ใช้ค่า total ที่ถูกกรองแล้ว
+            } = calcTaxFromIncluded(total); 
 
-            const tableNumber = localStorage.getItem("tableNumber") || null;
-            const orderType = localStorage.getItem("orderType") || null;
-            const customerCount = parseInt(localStorage.getItem("customerCount")) || null;
+            // 🛑 แก้ไข: ใช้ 'N/A' แทน null สำหรับ table_number หากไม่พบใน localStorage
+            const tableNumber = localStorage.getItem("tableNumber") || 'N/A'; 
+            const orderType = localStorage.getItem("orderType") || 'Takeaway'; // ใช้ 'Takeaway' เป็นค่าเริ่มต้นหากไม่พบ
+            const customerCount = parseInt(localStorage.getItem("customerCount") || '1') || 1; // ใช้ 1 เป็นค่าเริ่มต้น
 
             // 2.1. บันทึกเข้าตาราง receipts ก่อน 
             const receiptData = {
@@ -947,7 +948,6 @@
                 discount_amount: discount,
                 total_before_tax: beforeVat,
                 tax_amount: vatAmount,
-                // ✅ ส่งค่า total ที่ถูกกรองแล้วไปยัง total_amount
                 total_amount: total, 
                 payment_method: method
             };
@@ -958,7 +958,7 @@
             } = await supabase
                 .from('receipts')
                 .insert([receiptData])
-                .select('id') // ดึง ID กลับมาเท่านั้น
+                .select('id') 
                 .single();
 
             if (receiptError) {
@@ -997,7 +997,7 @@
 
         async function confirmCash() {
             const paid = Number(document.getElementById('cashInput').value || 0);
-            const t = getTotal(); // ใช้ getTotal() ที่ถูกกรองแล้ว
+            const t = getTotal(); 
 
             if (paid < t) return alert("เงินไม่พอ กรุณาใส่จำนวนเงินให้ถูกต้อง");
             const change = paid - t;
@@ -1008,7 +1008,7 @@
                 setTimeout(() => showReceipt('เงินสด', paid, change), 800);
             } catch (err) {
                 console.error("Supabase INSERT Error:", err);
-                alert(`❌ บันทึกคำสั่งซื้อไม่สำเร็จ! (Error: ${err.message}). กรุณาตรวจสอบ Console (F12)`); 
+                alert(`❌ บันทึกคำสั่งซื้อไม่สำเร็จ! (Error: ${err.message}).`); 
                 document.getElementById('changeDisplay').innerText = `บันทึกไม่สำเร็จ`;
             }
         }
@@ -1019,14 +1019,14 @@
                 showReceipt('QR Code', getTotal(), 0);
             } catch (err) {
                 console.error("Supabase INSERT Error:", err);
-                alert(`❌ บันทึกคำสั่งซื้อไม่สำเร็จ! (Error: ${err.message}). กรุณาตรวจสอบ Console (F12)`);
+                alert(`❌ บันทึกคำสั่งซื้อไม่สำเร็จ! (Error: ${err.message}).`);
             }
         }
 
         function showReceipt(method, paid, change) {
-            const orderType = localStorage.getItem("orderType") || "-";
-            const customerCount = localStorage.getItem("customerCount") || "-";
-            const tableNumber = localStorage.getItem("tableNumber") || "-";
+            const orderType = localStorage.getItem("orderType") || "Takeaway";
+            const customerCount = localStorage.getItem("customerCount") || "1";
+            const tableNumber = localStorage.getItem("tableNumber") || "N/A";
             closeAllPopups();
 
             let html = `
