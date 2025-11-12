@@ -6,29 +6,95 @@
   <title>เมนูอาหาร</title>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    :root{--orange:#FFA500;--orange-2:#FFB84D;--blue:#0047AB;--blue-2:#0066CC;--white:#FFFFFF;--glass:rgba(255,255,255,0.9)}
-    body{font-family:'Prompt',sans-serif;background:linear-gradient(135deg,var(--orange) 0%,#fff 60%,var(--blue));color:#002366;margin:0;padding:0}
-    header{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;background:transparent;gap:10px}
-    .btn-nav{padding:8px 14px;border:none;border-radius:10px;background:var(--glass);color:#002366;font-weight:600;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,0.06);transition:transform .15s}
+    :root{
+      --orange:#FFA500;--orange-2:#FFB84D;
+      --blue:#0047AB;--blue-2:#0066CC;
+      --white:#FFFFFF;--glass:rgba(255,255,255,0.9)
+    }
+    body{
+      font-family:'Prompt',sans-serif;
+      background:linear-gradient(135deg,var(--orange) 0%,#fff 60%,var(--blue));
+      color:#002366;margin:0;padding:0
+    }
+    header{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:12px 18px;background:transparent;gap:10px
+    }
+    .btn-nav{
+      padding:8px 14px;border:none;border-radius:10px;
+      background:var(--glass);color:#002366;font-weight:600;
+      cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,0.06);
+      transition:transform .15s
+    }
     .btn-nav:hover{transform:translateY(-2px)}
-    h1{text-align:center;margin:8px 0 12px;font-size:1.5rem;color:#002366}
+    h1{text-align:center;margin:8px 0 12px;font-size:1.6rem;color:#002366}
     .container{display:flex;gap:12px;padding:12px;align-items:flex-start}
-    .order-summary{width:320px;background:var(--glass);border-radius:16px;padding:14px;margin-right:8px;min-width:260px;box-shadow:0 8px 24px rgba(0,0,0,0.1);border:1px solid rgba(0,0,0,0.05)}
-    .menu-grid{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;align-items:start}
-    .menu-item{background:#fff;border-radius:14px;text-align:center;box-shadow:0 8px 20px rgba(0,0,0,0.08);padding:12px;cursor:pointer;transition:transform .14s}
+    .order-summary{
+      width:320px;background:var(--glass);border-radius:16px;padding:14px;
+      margin-right:8px;min-width:260px;box-shadow:0 8px 24px rgba(0,0,0,0.1)
+    }
+    .order-summary button{
+      width:100%;margin:6px 0;padding:10px;border:none;border-radius:8px;
+      font-weight:600;cursor:pointer;font-size:1rem;transition:transform .15s
+    }
+    .order-summary button:hover{transform:translateY(-2px)}
+    .order-summary button:nth-child(4){background:var(--orange);color:white}
+    .order-summary button:nth-child(5){background:#4CAF50;color:white}
+    .order-summary button:nth-child(6){background:var(--blue);color:white}
+    .order-summary button:nth-child(7){background:#f44336;color:white}
+    .menu-grid{
+      flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;align-items:start
+    }
+    .menu-item{
+      background:#fff;border-radius:14px;text-align:center;
+      box-shadow:0 8px 20px rgba(0,0,0,0.08);
+      padding:12px;cursor:pointer;transition:transform .14s
+    }
     .menu-item:hover{transform:translateY(-6px)}
-    .image-placeholder{width:100%;height:110px;background:#eee;border-radius:10px;overflow:hidden;margin-bottom:10px}
+    .image-placeholder{
+      width:100%;height:110px;background:#eee;border-radius:10px;overflow:hidden;margin-bottom:10px;display:none
+    }
     .image-placeholder img{width:100%;height:100%;object-fit:cover}
-    .cart-button{position:fixed;bottom:18px;right:18px;background:linear-gradient(90deg,#0047AB,#0066CC);color:white;border-radius:50px;padding:12px 18px;font-size:1.1rem;font-weight:700;box-shadow:0 4px 10px rgba(0,0,0,0.3);z-index:1100;cursor:pointer;transition:transform .15s;border:none}
-    .cart-button:hover{transform:scale(1.05)}
-    .cart-button span{background:#FF4500;border-radius:12px;padding:2px 6px;font-size:.9rem;margin-left:4px}
-    .popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:20px;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,0.2);z-index:1000;width:340px;text-align:center;display:none}
-    .overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.45);display:none;z-index:999}
-    .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
-    .keypad button{padding:14px;font-size:1.2rem;border-radius:10px;border:none;background-color:var(--orange);color:white;font-weight:600;cursor:pointer;transition:transform .12s}
+    .cart-button{
+      position:fixed;bottom:18px;right:18px;
+      background:linear-gradient(90deg,#0047AB,#0066CC);color:white;
+      border-radius:50px;padding:12px 18px;font-size:1.1rem;font-weight:700;
+      box-shadow:0 4px 10px rgba(0,0,0,0.3);z-index:1100;cursor:pointer;
+      border:none
+    }
+    .cart-button span{
+      background:#FF4500;border-radius:12px;padding:2px 6px;
+      font-size:.9rem;margin-left:4px
+    }
+    .popup{
+      position:fixed;top:50%;left:50%;
+      transform:translate(-50%,-50%);
+      background:#fff;padding:20px;border-radius:14px;
+      box-shadow:0 20px 50px rgba(0,0,0,0.2);
+      z-index:1000;width:340px;text-align:center;display:none
+    }
+    .overlay{
+      position:fixed;top:0;left:0;width:100%;height:100%;
+      background:rgba(0,0,0,0.45);display:none;z-index:999
+    }
+    .keypad{
+      display:grid;grid-template-columns:repeat(3,1fr);
+      gap:10px;margin-top:10px
+    }
+    .keypad button{
+      padding:14px;font-size:1.2rem;border-radius:10px;border:none;
+      background-color:var(--orange);color:white;font-weight:600;cursor:pointer;
+      transition:transform .12s
+    }
     .keypad button:hover{background-color:var(--orange-2);transform:scale(1.05)}
-    .popup input{padding:10px;width:90%;border-radius:8px;border:1px solid rgba(0,0,0,0.08);text-align:center;font-size:1.2rem}
-    .order-item{display:flex;justify-content:space-between;align-items:center;padding:8px;margin:4px 0;background:white;border-radius:8px}
+    .popup input{
+      padding:10px;width:90%;border-radius:8px;border:1px solid rgba(0,0,0,0.08);
+      text-align:center;font-size:1.2rem
+    }
+    .order-item{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:8px;margin:4px 0;background:white;border-radius:8px
+    }
   </style>
 </head>
 
@@ -41,7 +107,6 @@
   </header>
 
   <h1>เมนูอาหาร</h1>
-
   <div class="container">
     <div class="order-summary" id="orderSummary" style="display:none;">
       <h3>รายการสั่งซื้อ</h3>
@@ -52,6 +117,7 @@
       <button onclick="playClick(); payQR()">📱 QR Code</button>
       <button onclick="playClick(); cancelOrder()">✖ ยกเลิก</button>
     </div>
+
     <div class="menu-grid" id="menuGrid">กำลังโหลดเมนู...</div>
   </div>
 
@@ -84,11 +150,10 @@
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-    
     const SUPABASE_URL = "https://pujxykbpxsncbrlquaxo.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1anh5a2JweHNuY2JybHF1YXhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3OTI0OTIsImV4cCI6MjA3ODM2ODQ5Mn0.JxavkquEZo0W7NME4CJ01GbLKR0_gYFdcKy2BWCrAso";
-
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
     const menuGrid = document.getElementById("menuGrid");
     window.order = {};
 
@@ -98,7 +163,7 @@
         const { data, error } = await supabase
           .from("menu")
           .select("id,name,price,category,image,available")
-          .eq("available", true)   // ✅ ใช้ตัวพิมพ์ใหญ่
+          .eq("available", true)
           .order("id", { ascending: true });
 
         if (error) throw error;
@@ -108,18 +173,16 @@
         }
 
         menuGrid.innerHTML = data.map(item => `
-          <div class="menu-item" onclick="window.addToCart('${item.id}','${item.name.replace(/'/g, "\\'")}',${item.price})">
-            <div class="image-placeholder">
-              <img src="${item.image || 'kshop.jpg'}" alt="${item.name}" onerror="this.src='kshop.jpg'">
-            </div>
-            <h3 style="margin:8px 0;font-size:1.1rem;">${item.name}</h3>
-            <p style="color:#666;font-size:0.9rem;margin:4px 0;">${item.category || ""}</p>
-            <strong style="color:#0047AB;font-size:1.1rem;">${item.price} ฿</strong>
+          <div class="menu-item" onclick="addToCart('${item.id}','${item.name.replace(/'/g, "\\'")}',${item.price})">
+            ${item.image ? `<div class="image-placeholder" style="display:block;"><img src="${item.image}" alt="${item.name}"></div>` : ""}
+            <h3>${item.name}</h3>
+            <p>${item.category || ""}</p>
+            <strong>${item.price} ฿</strong>
           </div>
         `).join("");
       } catch (err) {
-        console.error("Error loading menu:", err);
-        menuGrid.innerHTML = "<p style='color:red;text-align:center;'>เกิดข้อผิดพลาด กรุณาลองใหม่</p>";
+        console.error(err);
+        menuGrid.innerHTML = "<p style='color:red;text-align:center;'>โหลดเมนูล้มเหลว</p>";
       }
     }
 
@@ -133,17 +196,21 @@
     window.updateCart = function() {
       const items = Object.values(window.order);
       const total = items.reduce((s, i) => s + i.price * i.quantity, 0);
-      const totalQty = items.reduce((s, i) => s + i.quantity, 0);
-      document.getElementById("cartCount").innerText = totalQty;
-      document.getElementById("cartButton").style.display = totalQty > 0 ? "block" : "none";
+      const qty = items.reduce((s, i) => s + i.quantity, 0);
+      document.getElementById("cartButton").style.display = qty ? "block" : "none";
+      document.getElementById("cartCount").innerText = qty;
       document.getElementById("orderItems").innerHTML = items.map(it => `
-        <div class="order-item"><span>${it.name} x ${it.quantity}</span><strong>${it.price * it.quantity} ฿</strong></div>
+        <div class="order-item">
+          <span>${it.name} x ${it.quantity}</span>
+          <strong>${it.price * it.quantity} ฿</strong>
+        </div>
       `).join("");
       document.getElementById("totalSummary").innerHTML = `รวมทั้งหมด: ${total} ฿`;
     };
 
     window.showCart = function() {
-      if (Object.values(window.order).length === 0) return alert("ตะกร้าว่างเปล่า");
+      const items = Object.values(window.order);
+      if (!items.length) return alert("ตะกร้าว่างเปล่า");
       document.getElementById("orderSummary").style.display = "block";
     };
 
@@ -155,10 +222,12 @@
       showPopup("cashPopup");
     };
 
+    window.appendCash = v => document.getElementById("cashInput").value += v;
+    window.clearCash = () => document.getElementById("cashInput").value = "";
     window.confirmCash = function() {
       const paid = Number(document.getElementById("cashInput").value || 0);
       const total = Object.values(window.order).reduce((s, i) => s + i.price * i.quantity, 0);
-      if (paid < total) return alert("เงินไม่พอ กรุณาใส่จำนวนเงินให้ถูกต้อง");
+      if (paid < total) return alert("เงินไม่พอ กรุณาใส่จำนวนมากกว่ายอด");
       const change = paid - total;
       document.getElementById("changeDisplay").innerText = `เงินทอน: ${change} ฿`;
       setTimeout(() => {
@@ -174,7 +243,6 @@
       document.getElementById("qrAmount").innerText = total;
       showPopup("qrPopup");
     };
-
     window.confirmQR = function() {
       closeAllPopups();
       alert("📱 ชำระเงินผ่าน QR สำเร็จ!");
@@ -186,33 +254,13 @@
   </script>
 
   <script>
-    function playClick() {
-      try {
-        const s = document.getElementById("clickSound");
-        s.currentTime = 0;
-        s.play();
-      } catch (e) {}
-    }
-    function goHome() { window.location.href = "index.html"; }
-    function goBack() { window.history.back(); }
-    function showPopup(id) {
-      document.getElementById("overlay").style.display = "block";
-      document.getElementById(id).style.display = "block";
-    }
-    function closeAllPopups() {
-      document.getElementById("overlay").style.display = "none";
-      document.querySelectorAll(".popup").forEach(p => p.style.display = "none");
-    }
-    function appendCash(v) { document.getElementById("cashInput").value += v; }
-    function clearCash() { document.getElementById("cashInput").value = ""; document.getElementById("changeDisplay").innerText = ""; }
-    function closeCart() { document.getElementById("orderSummary").style.display = "none"; }
-    function cancelOrder() {
-      if (confirm("ยืนยันยกเลิกรายการทั้งหมด?")) {
-        window.order = {};
-        updateCart();
-        closeCart();
-      }
-    }
+    function playClick(){try{const s=document.getElementById("clickSound");s.currentTime=0;s.play().catch(()=>{});}catch(e){}}
+    function goHome(){window.location.href="index.html";}
+    function goBack(){window.history.back();}
+    function showPopup(id){document.getElementById("overlay").style.display="block";document.getElementById(id).style.display="block";}
+    function closeAllPopups(){document.getElementById("overlay").style.display="none";document.querySelectorAll(".popup").forEach(p=>p.style.display="none");}
+    function closeCart(){document.getElementById("orderSummary").style.display="none";}
+    function cancelOrder(){if(confirm("ยืนยันยกเลิกรายการทั้งหมด?")){window.order={};updateCart();closeCart();}}
   </script>
 </body>
 </html>
