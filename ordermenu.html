@@ -279,73 +279,6 @@
             background: linear-gradient(90deg, #FFC04D, #FFA500) !important;
         }
 
-        /* 🔧 ปรับขนาดใบเสร็จและ QR Code ไม่ให้ใหญ่เกินไป */
-        #receiptPopup {
-            width: 320px !important;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        #receiptPopup img {
-            width: 80px !important;
-            height: auto;
-            display: block;
-            margin: 0 auto 6px;
-        }
-
-        /* จำกัดขนาด QR Code */
-        #qrPopup img {
-            width: 180px !important;
-            height: auto;
-            margin: 0 auto;
-            display: block;
-            border-radius: 8px;
-        }
-
-        #receiptPopup {
-            background: #fff;
-            border: 1px solid #ccc;
-        }
-
-        /* ปรับขนาด QR และป๊อปอัปให้ดูดีขึ้น */
-        #qrPopup {
-            width: 320px;
-            text-align: center;
-            border-radius: 16px;
-            background: #fff;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-        }
-
-        #qrPopup h3 {
-            margin-bottom: 10px;
-            color: #0047AB;
-        }
-
-        #qrPopup img {
-            width: 180px;
-            height: auto;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            margin-bottom: 10px;
-        }
-
-        #qrPopup button {
-            background: linear-gradient(90deg, #4CAF50, #45A049);
-            color: white;
-            font-weight: 600;
-            border: none;
-            border-radius: 10px;
-            padding: 10px 16px;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-        }
-
-        #qrPopup button:hover {
-            transform: scale(1.05);
-        }
-
-        /* ปรับ UI ของใบเสร็จให้สวยขึ้น */
         #receiptPopup {
             width: 320px !important;
             max-height: 90vh;
@@ -393,13 +326,19 @@
             width: 80px !important;
             height: auto;
             margin-bottom: 6px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
         }
 
-
-        /* ซ่อนปุ่มตอนพิมพ์ */
         @media print {
             #receiptPopup button {
                 display: none !important;
+            }
+
+            #receiptPopup {
+                width: 100% !important;
+                box-shadow: none !important;
             }
         }
 
@@ -416,17 +355,6 @@
             font-size: 0.95rem;
         }
 
-        /* ซ่อนปุ่มตอนพิมพ์ */
-        @media print {
-            #receiptPopup button {
-                display: none !important;
-            }
-
-            #receiptPopup {
-                width: 100% !important;
-                box-shadow: none !important;
-            }
-        }
 
         .discount-btn {
             background: linear-gradient(90deg, #FFA500, #FFB84D);
@@ -439,11 +367,6 @@
             font-size: 1.1rem;
             transition: all 0.2s ease;
             box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .discount-btn:hover {
-            transform: translateY(-3px);
-            background: linear-gradient(90deg, #FFB84D, #FFD27F);
         }
 
         .discount-clear-btn {
@@ -459,12 +382,6 @@
             transition: all 0.2s ease;
         }
 
-        .discount-clear-btn:hover {
-            transform: scale(1.05);
-            background: linear-gradient(90deg, #666, #444);
-        }
-
-        /* 📱 ปรับ layout สำหรับมือถือ */
         @media (max-width: 768px) {
             .container {
                 flex-direction: column;
@@ -482,7 +399,6 @@
 
             .menu-grid {
                 grid-template-columns: repeat(2, 1fr);
-                /* ✅ ให้แสดง 2 คอลัมน์ */
                 gap: 10px;
             }
 
@@ -494,13 +410,11 @@
 
             .image-placeholder {
                 height: 80px;
-                /* ✅ ลดขนาดรูป */
                 font-size: 0.8rem;
             }
         }
 
 
-        /* 🛒 ปุ่มตะกร้า */
         .cart-button {
             position: fixed;
             bottom: 18px;
@@ -515,10 +429,6 @@
             z-index: 1100;
             cursor: pointer;
             transition: transform .15s ease;
-        }
-
-        .cart-button:hover {
-            transform: scale(1.05);
         }
 
         .cart-button span {
@@ -642,24 +552,13 @@
     </div>
 
     <script>
-        let order = {}, discountPercent = 0;
+        // 🛠️ แก้ไข: ประกาศตัวแปรและฟังก์ชันที่ใช้ร่วมกันใน Global Scope
+        let order = {};
+        let discountPercent = 0;
         let menuMap = {}; // ใช้เก็บ ID เมนูจาก Supabase
 
-        // ------------------ Popup Control ----------------
-        function showPopup(id) {
-            document.getElementById('overlay').style.display = 'block';
-            document.getElementById(id).style.display = 'block';
-        }
-        function closeAllPopups() {
-            document.querySelectorAll('.popup').forEach(p => p.style.display = 'none');
-            document.getElementById('overlay').style.display = 'none';
-        }
-        function closeCart() {
-            document.getElementById('orderSummary').style.display = 'none';
-            document.getElementById('overlay').style.display = 'none';
-        }
-
         // ------------------ Navigation / Sound ----------------
+        // 🛠️ แก้ไข: ฟังก์ชันนำทางต้องอยู่ Global Scope
         function goHome() { window.location.href = 'index.html'; }
         function goBack() { window.history.back(); }
 
@@ -693,14 +592,11 @@
             osc.stop(audioCtx.currentTime + 0.25);
             if (navigator.vibrate) navigator.vibrate([100, 60, 100]);
         }
-        
         const _alert = window.alert; // เก็บ alert เดิม
         window.alert = function (msg) {
             playError();
             _alert(msg);
         };
-        
-        document.addEventListener("DOMContentLoaded", loadOrderInfo);
         document.addEventListener("click", () => {
             try {
                 if (typeof audioCtx !== "undefined" && audioCtx.state === "suspended") {
@@ -710,7 +606,22 @@
                 }
             } catch (e) { }
         }, { once: true });
+        document.addEventListener("DOMContentLoaded", loadOrderInfo);
 
+        // ------------------ Popup Control ----------------
+        function showPopup(id) {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById(id).style.display = 'block';
+        }
+        function closeAllPopups() {
+            document.querySelectorAll('.popup').forEach(p => p.style.display = 'none');
+            document.getElementById('overlay').style.display = 'none';
+        }
+        function closeCart() {
+            document.getElementById('orderSummary').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+        }
+        function closeReceipt() { closeAllPopups(); }
 
         // ------------------ Cart/Order Helpers ----------------
         function loadOrderInfo() {
@@ -722,7 +633,7 @@
             if (el) el.innerHTML = text;
         }
 
-        window.updateCartCount = function() { // ✅ ทำให้เป็น window function
+        function updateCartCount() {
             const count = Object.values(order).reduce((sum, item) => sum + item.quantity, 0);
             document.getElementById('cartCount').innerText = count;
             document.getElementById('cartButton').style.display = count > 0 ? 'flex' : 'none';
@@ -734,23 +645,29 @@
             if (!order[n]) order[n] = { price: p, quantity: 1 };
             else order[n].quantity++;
             updateSummary();
-            window.updateCartCount();
+            updateCartCount();
         }
         window.changeQty = function(n, c) {
             if (order[n]) {
                 order[n].quantity += c;
                 if (order[n].quantity <= 0) delete order[n];
                 updateSummary();
-                window.updateCartCount();
+                updateCartCount();
             }
         }
         window.removeItem = function(n) {
             delete order[n];
             updateSummary();
-            window.updateCartCount();
+            updateCartCount();
         }
 
         // ------------------ Summary/Discount/Payment Flow ----------------
+        function calcTaxFromIncluded(totalWithVat) {
+            const beforeVat = totalWithVat / 1.07;
+            const vatAmount = totalWithVat - beforeVat;
+            return { beforeVat, vatAmount };
+        }
+
         function updateSummary() {
             const items = document.getElementById('orderItems'),
                 t = document.getElementById('totalSummary');
@@ -760,6 +677,7 @@
             for (const n in order) {
                 const it = order[n];
                 subtotal += it.price * it.quantity;
+                // ใช้ window.changeQty และ window.removeItem เพื่อให้เรียกฟังก์ชัน Global ได้
                 items.innerHTML += `
             <div class='order-item'>
                 <div>${n}</div>
@@ -792,12 +710,6 @@
             return subtotal - discount;
         }
 
-        function calcTaxFromIncluded(totalWithVat) {
-            const beforeVat = totalWithVat / 1.07;
-            const vatAmount = totalWithVat - beforeVat;
-            return { beforeVat, vatAmount };
-        }
-
         window.submitOrder = function() {
             if (Object.keys(order).length === 0) {
                 alert('ยังไม่มีรายการสั่งซื้อ');
@@ -811,7 +723,7 @@
                 order = {};
                 discountPercent = 0;
                 updateSummary();
-                window.updateCartCount();
+                updateCartCount();
                 closeAllPopups();
             }
         }
@@ -832,13 +744,13 @@
             discountPercent = p;
             closeAllPopups();
             updateSummary();
-            window.updateCartCount();
+            updateCartCount();
         }
         window.removeDiscount = function() {
             discountPercent = 0;
             closeAllPopups();
             updateSummary();
-            window.updateCartCount();
+            updateCartCount();
         }
         window.appendPin = function(num) {
             const input = document.getElementById('pinInput');
@@ -862,12 +774,11 @@
             document.getElementById('qrAmount').innerText = t.toFixed(2);
             showPopup('qrPopup');
         }
+        // 🛠️ แก้ไข: ฟังก์ชัน Keypad เงินสด
         window.appendCash = function(num) {
             const input = document.getElementById('cashInput');
-            // ✅ อนุญาตให้กรอกได้ไม่จำกัด (สำหรับการชำระเงิน)
             input.value += num;
         }
-
         window.clearCash = function() {
             document.getElementById('cashInput').value = '';
             document.getElementById('changeDisplay').innerText = '';
@@ -880,7 +791,6 @@
             const change = paid - t;
 
             try {
-                // ⚠️ ต้องบันทึก Supabase ตรงนี้
                 // await saveOrderToSupabase('เงินสด');
                 document.getElementById('changeDisplay').innerText = `เงินทอน: ${change.toFixed(2)} ฿`;
                 setTimeout(() => showReceipt('เงินสด', paid, change), 800);
@@ -892,7 +802,6 @@
 
         window.confirmQR = async function() {
             try {
-                // ⚠️ ต้องบันทึก Supabase ตรงนี้
                 // await saveOrderToSupabase('QR Code');
                 showReceipt('QR Code', getTotal(), 0);
             } catch (err) {
@@ -902,7 +811,6 @@
         }
         
         // ------------------ Receipt ----------------
-        // 🛠️ แก้ไข: นำโค้ดใบเสร็จกลับมาใส่
         function showReceipt(method, paid, change) {
             const orderType = localStorage.getItem("orderType") || "-";
             const customerCount = localStorage.getItem("customerCount") || "-";
@@ -962,16 +870,12 @@
             document.getElementById('receiptDetails').innerHTML = html;
             showPopup('receiptPopup');
 
-            // ✅ ต้องส่ง payload ไป n8n ตรงนี้
-
-            // ✅ ล้างข้อมูลหลังบันทึก Supabase สำเร็จแล้ว
+            // ล้างข้อมูลหลังแสดงใบเสร็จสำเร็จ
             order = {};
             discountPercent = 0;
             updateSummary();
-            window.updateCartCount();
+            updateCartCount();
         }
-
-        function closeReceipt() { closeAllPopups(); }
 
         window.showCart = function() {
             if (Object.keys(order).length === 0) return alert("ตะกร้าว่างเปล่า");
@@ -983,8 +887,9 @@
 
     <script type="module">
         import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-        
-        const SUPABASE_URL = "https://pujxykbpxsncbrlquaxo.supabase.co"; // ⚠️ URL ที่ถูก
+
+        // ⚠️ กรุณาตรวจสอบและอัปเดต URL/KEY ให้ถูกต้อง
+        const SUPABASE_URL = "https://pujxykbpxsncbrlquaxo.supabase.co"; 
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1anh5a2JweHNuY2JybHF1YXhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3OTI0OTIsImV4cCI6MjA3ODM2ODQ5Mn0.JxavkquEZo0W7NME4CJ01GbLKR0_gYFdcKy2BWCrAso";
 
         const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -994,7 +899,6 @@
             try {
                 menuGrid.innerHTML = "กำลังโหลดเมนู...";
                 
-                // 🛠️ แก้ไข: ดึงข้อมูลเมนูจาก Supabase (แทน Google Apps Script)
                 const { data, error } = await supabase
                     .from("menu")
                     .select("id,name,price,category,image,available")
@@ -1012,14 +916,14 @@
                 }
 
                 menuGrid.innerHTML = data.map(item => {
-                    // เก็บ ID เมนูไว้ใน menuMap (Global)
                     window.menuMap[item.name] = { id: item.id, price: item.price }; 
+                    const imageUrl = item.image || 'kshop.jpg'; // ใช้ URL รูปภาพจาก Supabase หรือรูปสำรอง
 
-                    // 🛠️ แก้ไข: นำ URL รูปภาพจาก Supabase (item.image) มาแสดง
+                    // 🛠️ แก้ไข: เรียกฟังก์ชัน Global ด้วย window.addToOrder
                     return `
                         <div class="menu-item" onclick="window.playClick(); window.addToOrder({ name: '${item.name.replace(/'/g, "\\'")}', price: ${item.price} })">
                             <div class="image-placeholder">
-                                <img src="${item.image || 'kshop.jpg'}" alt="${item.name}" onerror="this.src='kshop.jpg'">
+                                <img src="${imageUrl}" alt="${item.name}" onerror="this.src='kshop.jpg'">
                             </div>
                             <h3 style="margin:8px 0;font-size:1.1rem;">${item.name}</h3>
                             <strong style="color:#0047AB;font-size:1.1rem;">${item.price} ฿</strong>
