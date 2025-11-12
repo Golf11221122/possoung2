@@ -19,10 +19,11 @@
     .order-item .controls button{font-size:.95rem;width:32px;height:32px;border:none;border-radius:8px;background:var(--orange);color:white;cursor:pointer;font-weight:700;transition:transform .12s}
     .order-item .controls button:hover{transform:scale(1.1);background:var(--orange-2)}
     .summary-total{margin-top:12px;font-weight:700;color:#002366;line-height:1.4;text-align:center}
-    .menu-grid{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;align-items:start}
+    .menu-grid{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;align-items:start;padding:12px}
     .menu-item{background:#fff;border-radius:14px;text-align:center;box-shadow:0 8px 20px rgba(0,0,0,0.08);padding:12px;cursor:pointer;transition:transform .14s}
     .menu-item:hover{transform:translateY(-6px)}
-    .image-placeholder{width:100%;height:110px;background:#eee;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#666;font-size:.95rem;margin-bottom:10px}
+    .image-placeholder{width:100%;height:110px;background:#eee;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#666;font-size:.95rem;margin-bottom:10px;overflow:hidden}
+    .image-placeholder img{width:100%;height:100%;object-fit:cover;border-radius:8px}
     .order-summary button{width:100%;padding:10px;border:none;border-radius:12px;font-weight:700;margin-top:8px;cursor:pointer;font-size:1rem;transition:.2s}
     .order-summary button:first-of-type{background:linear-gradient(90deg,var(--blue),var(--blue-2));color:white}
     .order-summary button:nth-of-type(2){background:linear-gradient(90deg,var(--orange),var(--orange-2));color:#002366}
@@ -46,10 +47,12 @@
     #qrPopup img{width:180px;height:auto;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1);margin-bottom:10px}
     #qrPopup button{background:linear-gradient(90deg,#4CAF50,#45A049);color:white;font-weight:600;border:none;border-radius:10px;padding:10px 16px;cursor:pointer;transition:transform .2s}
     #qrPopup button:hover{transform:scale(1.05)}
-    @media (max-width:768px){.container{flex-direction:column}.order-summary{position:sticky;top:0;width:100%;z-index:1000;margin:0 0 10px 0;border-radius:0 0 16px 16px;box-shadow:0 4px 12px rgba(0,0,0,0.15)}.menu-grid{grid-template-columns:repeat(2,1fr);gap:10px}.menu-item{padding:8px;border-radius:12px;font-size:.9rem}.image-placeholder{height:80px;font-size:.8rem}}
-    .cart-button{position:fixed;bottom:18px;right:18px;background:linear-gradient(90deg,#0047AB,#0066CC);color:white;border-radius:50px;padding:12px 18px;font-size:1.1rem;font-weight:700;box-shadow:0 4px 10px rgba(0,0,0,0.3);z-index:1100;cursor:pointer;transition:transform .15s}
-    .cart-button:hover{transform:scale(1.05)}
-    .cart-button span{background:#FF4500;border-radius:12px;padding:2px 6px;font-size:.9rem;margin-left:4px}
+    @media (max-width:768px){.container{flex-direction:column}.menu-grid{grid-template-columns:repeat(2,1fr);gap:10px}}
+    /* receipt styling */
+    .receipt-header img{width:80px!important;height:auto;margin-bottom:6px}
+    .receipt-table{width:100%;border-collapse:collapse;margin-top:10px}
+    .receipt-table th,.receipt-table td{border-bottom:1px dashed rgba(0,0,0,0.15);padding:6px 8px;font-size:0.95rem}
+    @media print{#receiptPopup button{display:none!important}#receiptPopup{width:100%!important;box-shadow:none!important}}
   </style>
 </head>
 <body>
@@ -70,7 +73,8 @@
       <div class="summary-total" id="totalSummary"></div>
       <button onclick="playClick(); closeCart()">➕ กลับไปสั่งเพิ่ม</button>
       <button onclick="playClick(); promptDiscountAuth()">🎁 ส่วนลด</button>
-      <button onclick="playClick(); openPaymentPopup()">✅ ชำระเงิน</button>
+      <button onclick="playClick(); payCash()">💵 เงินสด</button>
+      <button onclick="playClick(); payQR()">📱 QR Code</button>
       <button onclick="playClick(); cancelOrder()">❌ ยกเลิก</button>
       <button onclick="playClick(); removeDiscount()">🧹 ลบส่วนลด</button>
     </div>
@@ -78,10 +82,10 @@
     <div class="menu-grid" id="menuGrid">กำลังโหลดเมนู...</div>
   </div>
 
-  <!-- popups -->
+  <!-- Discount popup -->
   <div class="popup" id="discountPopup">
     <h3 style="color:#0047AB;margin-bottom:14px;">🎁 เลือกระดับส่วนลด</h3>
-    <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
+    <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
       <button class="discount-btn" onclick="playClick(); applyDiscount(5)">5%</button>
       <button class="discount-btn" onclick="playClick(); applyDiscount(10)">10%</button>
       <button class="discount-btn" onclick="playClick(); applyDiscount(15)">15%</button>
@@ -90,6 +94,7 @@
     <button class="discount-clear-btn" onclick="playClick(); removeDiscount()">🧹 ล้างส่วนลด</button>
   </div>
 
+  <!-- Auth PIN popup -->
   <div class="popup" id="authPopup">
     <h3>กรอกรหัสยืนยัน</h3>
     <input id="pinInput" type="password" maxlength="6" readonly>
@@ -109,6 +114,7 @@
     </div>
   </div>
 
+  <!-- Cash popup -->
   <div class="popup" id="cashPopup">
     <h3>ชำระด้วยเงินสด</h3>
     <p>ยอดที่ต้องชำระ: <strong><span id="cashAmount"></span> ฿</strong></p>
@@ -130,6 +136,7 @@
     <p id="changeDisplay" style="margin-top:8px;font-weight:600;"></p>
   </div>
 
+  <!-- QR popup -->
   <div class="popup" id="qrPopup">
     <h3>สแกนเพื่อชำระเงิน</h3>
     <img id="qrImage" src="kshop.jpg" alt="QR Code">
@@ -137,85 +144,62 @@
     <button onclick="playClick(); confirmQR()">✅ ชำระเงินเสร็จแล้ว</button>
   </div>
 
-  <div class="popup" id="paymentPopup">
-    <h3>เลือกวิธีชำระเงิน</h3>
-    <div class="payment-buttons">
-      <button onclick="playClick(); payCash()">💵 เงินสด</button>
-      <button onclick="playClick(); payQR()">📱 QR Code</button>
-    </div>
-  </div>
-
+  <!-- Receipt popup -->
   <div class="popup" id="receiptPopup" style="width:360px;text-align:left;">
-    <div class="receipt-header">
-      <img src="logo.jpg" alt="โลโก้ร้านชายสี่บะหมี่เกี๊ยว" style="width:80px">
-      <h3 style="text-align:center;">ชายสี่บะหมี่เกี๊ยว กอล์ฟบ้านไผ่</h3>
-      <h5 style="text-align:center;">ที่อยู่ 95/7 ม.7 ต.ในเมือง อ.บ้านไผ่ จ.ขอนแก่น 40110</h5>
-      <h5 style="text-align:center;">เลขที่ผู้เสียภาษี:1409700103387</h5>
-      <h5 style="text-align:center;">โทร.082-3804188</h5>
+    <div class="receipt-header" style="text-align:center;">
+      <img src="logo.jpg" alt="logo">
+      <h3>ชายสี่บะหมี่เกี๊ยว กอล์ฟบ้านไผ่</h3>
+      <h5>ที่อยู่ 95/7 ม.7 ต.ในเมือง อ.บ้านไผ่ จ.ขอนแก่น 40110</h5>
+      <h5>เลขที่ผู้เสียภาษี:1409700103387</h5>
+      <h5>โทร.082-3804188</h5>
     </div>
-    <h4 style="text-align:center;">ใบกำกับภาษีอย่างย่อ/🧾 ใบเสร็จรับเงิน</h4>
+    <h4 style="text-align:center;">ใบกำกับภาษีอย่างย่อ / ใบเสร็จรับเงิน</h4>
     <div id="receiptDetails"></div>
     <h5 style="text-align:center;">ขอขอบพระคุณลูกค้าที่มาอุดหนุน</h5>
-    <button onclick="playClick(); window.print()">🖨️ พิมพ์ใบเสร็จ</button>
-    <button onclick="playClick(); closeReceipt()">กลับหน้าแรก</button>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:10px;">
+      <button onclick="playClick(); window.print()" style="width:45%;">🖨️ พิมพ์</button>
+      <button onclick="playClick(); closeReceipt()" style="width:45%;">ปิด</button>
+    </div>
   </div>
 
-  <button class="cart-button" id="cartBtn" onclick="openCart()">🛒 <span id="cartCount">0</span></button>
+  <button class="cart-button" id="cartBtn" onclick="playClick(); openCart()">🛒 <span id="cartCount">0</span></button>
 
-  <!-- Supabase + Main script -->
+  <audio id="clickSound" src="click.mp3" preload="auto"></audio>
+
   <script type="module">
-    // ------------------ IMPORTANT ------------------
-    // ใส่ค่า Supabase ของคุณที่นี่ (ANON key)
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    // -- Supabase config (ยืนยันตามที่ส่งมา) --
     const SUPABASE_URL = "https://pujxykbpxsncbrlquaxo.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1anh5a2JweHNuY2JybHF1YXhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3OTI0OTIsImV4cCI6MjA3ODM2ODQ5Mn0.JxavkquEZo0W7NME4CJ01GbLKR0_gYFdcKy2BWCrAso";
-    // -----------------------------------------------
 
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // WebAudio click sound (no external file)
-    function playClick() {
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const o = ctx.createOscillator();
-        const g = ctx.createGain();
-        o.type = 'square';
-        o.frequency.value = 800;
-        g.gain.value = 0.02;
-        o.connect(g);
-        g.connect(ctx.destination);
-        o.start();
-        setTimeout(()=> { o.stop(); ctx.close(); }, 60);
-      } catch(e){ /* ignore on old browsers */ }
-    }
-
-    /* ================== App state ================== */
-    let order = {}; // { itemId: { id, name, price, quantity } }
+    // App state
+    let order = {}; // { id: {id, name, price, quantity} }
     let discountPercent = 0;
 
-    // load/save cart + discount to localStorage
-    function loadCartFromStorage(){
-      try {
-        const raw = localStorage.getItem('cart');
-        const d = localStorage.getItem('discountPercent');
-        if(raw) order = JSON.parse(raw); else order = {};
-        discountPercent = d ? Number(d) : 0;
-      } catch(e){ order = {}; discountPercent = 0; }
-      updateCartUI();
+    // Popup helpers
+    function showPopup(id) {
+      document.getElementById('overlay').style.display = 'block';
+      document.getElementById(id).style.display = 'block';
     }
-    function saveCartToStorage(){
-      localStorage.setItem('cart', JSON.stringify(order));
-      localStorage.setItem('discountPercent', String(discountPercent));
+    function closeAllPopups() {
+      document.getElementById('overlay').style.display = 'none';
+      document.querySelectorAll('.popup').forEach(p => p.style.display = 'none');
+    }
+    function closeReceipt() {
+      closeAllPopups();
+      // after closing receipt, clear cart
+      order = {};
       updateCartUI();
     }
 
-    /* ============ Menu Loading (Supabase) ============ */
+    // -- Load menu --
     const menuGrid = document.getElementById('menuGrid');
     async function loadMenu() {
-      menuGrid.innerHTML = 'กำลังโหลดเมนู...';
+      menuGrid.innerHTML = '⏳ กำลังโหลดเมนู...';
       try {
-        // ถ้าตารางคุณมีคอลัมน์ available ให้ใช้ .eq('available', true)
-        // ถ้าไม่มี ให้ลบ .eq(...) ออก
         const { data, error } = await supabase
           .from('menu')
           .select('id,name,price,category,image,available')
@@ -230,17 +214,16 @@
 
         menuGrid.innerHTML = data.map(item => {
           const img = item.image && item.image.trim() !== '' ? item.image : 'kshop.jpg';
-          // escape name displayed inside HTML
+          // escape name for inline onclick
+          const safeName = item.name.replace(/'/g, "\\'");
           return `
-            <div class="menu-item" data-id="${item.id}" onclick="addToCart(${item.id}, ${JSON.stringify(item.name)}, ${item.price})">
+            <div class="menu-item" onclick="addToCart(${item.id}, '${safeName}', ${item.price})">
               <div class="image-placeholder">
-                <img src="${img}" alt="${escapeHtml(item.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" onerror="this.src='kshop.jpg'">
+                <img src="${img}" alt="${item.name}" onerror="this.src='kshop.jpg'">
               </div>
-              <div class="menu-info">
-                <h3 style="margin:6px 0 4px">${escapeHtml(item.name)}</h3>
-                <p style="margin:0 0 6px">${escapeHtml(item.category || '')}</p>
-                <strong>${item.price} บาท</strong>
-              </div>
+              <h3>${item.name}</h3>
+              <p style="margin:6px 0 8px;color:#666;font-size:0.95rem">${item.category || ''}</p>
+              <strong>${item.price} บาท</strong>
             </div>
           `;
         }).join('');
@@ -250,29 +233,23 @@
       }
     }
 
-    function escapeHtml(str){
-      if(!str) return '';
-      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
-    }
-
-    /* ============ Cart functions ============ */
+    // -- Cart functions --
     window.addToCart = function(id, name, price) {
+      playClick();
       const key = String(id);
       if (!order[key]) order[key] = { id, name, price, quantity: 0 };
       order[key].quantity += 1;
-      saveCartToStorage();
-      openCart();
-      playClick();
-    }
+      updateCartUI();
+    };
 
-    function updateCartUI(){
+    function updateCartUI() {
       const orderItemsEl = document.getElementById('orderItems');
       const totalSummaryEl = document.getElementById('totalSummary');
       const cartCountEl = document.getElementById('cartCount');
       const orderInfoEl = document.getElementById('orderInfo');
 
       const items = Object.values(order);
-      if(items.length === 0){
+      if (items.length === 0) {
         orderItemsEl.innerHTML = '<p style="text-align:center;color:#666">ยังไม่มีสินค้าในตะกร้า</p>';
         totalSummaryEl.innerText = '';
         cartCountEl.innerText = '0';
@@ -286,7 +263,7 @@
       orderItemsEl.innerHTML = items.map(it => `
         <div class="order-item">
           <div style="flex:1">
-            <div style="font-weight:700">${escapeHtml(it.name)}</div>
+            <div style="font-weight:700">${it.name}</div>
             <div style="color:#555">${it.price} ฿ x ${it.quantity}</div>
           </div>
           <div class="controls" style="display:flex;flex-direction:column;gap:6px">
@@ -300,32 +277,51 @@
       const subtotal = items.reduce((s,i)=> s + i.price * i.quantity, 0);
       const discount = Math.round(subtotal * (discountPercent/100));
       const total = subtotal - discount;
+
       totalSummaryEl.innerHTML = `ยอดรวม (รวมภาษี): <strong>${total} ฿</strong><br>ส่วนลด: ${discountPercent}% (${discount} ฿)`;
 
-      // orderInfo placeholders (you can store real values in localStorage)
+      // orderInfo placeholders (you can store orderType/table/customerCount in localStorage if needed)
       const orderType = localStorage.getItem('orderType') || 'ทานที่ร้าน';
       const customerCount = localStorage.getItem('customerCount') || '1';
       const tableNumber = localStorage.getItem('tableNumber') || '-';
       orderInfoEl.innerText = `${orderType} | 👥 ${customerCount} คน | 🪑 โต๊ะ: ${tableNumber}`;
     }
 
-    window.increaseQty = function(id){ const k=String(id); if(order[k]){ order[k].quantity+=1; saveCartToStorage(); } }
-    window.decreaseQty = function(id){ const k=String(id); if(order[k]){ order[k].quantity-=1; if(order[k].quantity<=0) delete order[k]; saveCartToStorage(); } }
-    window.removeItem = function(id){ const k=String(id); if(order[k]){ delete order[k]; saveCartToStorage(); } }
+    window.increaseQty = function(id) {
+      const k = String(id);
+      if (order[k]) { order[k].quantity++; updateCartUI(); }
+    }
+    window.decreaseQty = function(id) {
+      const k = String(id);
+      if (order[k]) {
+        order[k].quantity--;
+        if (order[k].quantity <= 0) delete order[k];
+        updateCartUI();
+      }
+    }
+    window.removeItem = function(id) {
+      const k = String(id);
+      if (order[k]) { delete order[k]; updateCartUI(); }
+    }
 
-    function openCart(){ document.getElementById('orderSummary').style.display='block'; window.scrollTo({ top:0, behavior:'smooth' }); }
-    function closeCart(){ document.getElementById('orderSummary').style.display='none'; }
+    window.openCart = () => { document.getElementById('orderSummary').style.display = 'block'; window.scrollTo({ top:0, behavior:'smooth' }); };
+    window.closeCart = () => { document.getElementById('orderSummary').style.display = 'none'; };
 
-    /* ============ Discount / PIN ============ */
+    // Discount / PIN logic
     function promptDiscountAuth(){ showPopup('authPopup'); }
-    function appendPin(d){ const el=document.getElementById('pinInput'); el.value=(el.value + d).slice(0,6); }
-    function clearPin(){ document.getElementById('pinInput').value=''; }
-    function submitPin(){ const val=document.getElementById('pinInput').value; closeAllPopups(); if(val === '1234'){ showPopup('discountPopup'); } else { alert('รหัสไม่ถูกต้อง'); } document.getElementById('pinInput').value=''; }
-    function applyDiscount(p){ discountPercent = p; saveCartToStorage(); closeAllPopups(); updateCartUI(); }
-    function removeDiscount(){ discountPercent = 0; saveCartToStorage(); updateCartUI(); }
+    function appendPin(d){ const el = document.getElementById('pinInput'); el.value = (el.value + d).slice(0,6); }
+    function clearPin(){ document.getElementById('pinInput').value = ''; }
+    function submitPin(){
+      const val = document.getElementById('pinInput').value;
+      closeAllPopups();
+      if (val === '1234') { showPopup('discountPopup'); } else { alert('รหัสไม่ถูกต้อง'); }
+      document.getElementById('pinInput').value = '';
+    }
+    function applyDiscount(percent){ discountPercent = percent; updateCartUI(); closeAllPopups(); }
+    function removeDiscount(){ discountPercent = 0; updateCartUI(); }
 
-    /* ============ Cash keypad ============ */
-    function appendCash(d){ const el=document.getElementById('cashInput'); el.value = (el.value + d).replace(/^0+/, ''); }
+    // Cash keypad
+    function appendCash(d){ const el=document.getElementById('cashInput'); el.value = (el.value + d).replace(/^0+/,''); }
     function clearCash(){ document.getElementById('cashInput').value = ''; }
     function payCash(){
       const subtotal = Object.values(order).reduce((s,i)=> s + i.price*i.quantity, 0);
@@ -339,131 +335,128 @@
       const subtotal = Object.values(order).reduce((s,i)=> s + i.price*i.quantity, 0);
       const discount = Math.round(subtotal * (discountPercent/100));
       const total = subtotal - discount;
-      if(paid < total){ alert('จำนวนเงินจ่ายยังไม่พอ'); return; }
+      if (paid < total) { alert('จำนวนเงินจ่ายยังไม่พอ'); return; }
       const change = paid - total;
       document.getElementById('changeDisplay').innerText = `เงินทอน ${change} ฿`;
       closeAllPopups();
       submitOrder('cash');
     }
 
-    /* ============ QR flow ============ */
+    // QR flow
     function payQR(){
       const subtotal = Object.values(order).reduce((s,i)=> s + i.price*i.quantity, 0);
       const discount = Math.round(subtotal * (discountPercent/100));
       const total = subtotal - discount;
       document.getElementById('qrAmount').innerText = total;
+      // If you have dynamic QR generation, set #qrImage.src here
       showPopup('qrPopup');
     }
     function confirmQR(){ closeAllPopups(); submitOrder('qr'); }
 
-    function openPaymentPopup(){ showPopup('paymentPopup'); }
-
-    /* ============ Popup control ============ */
-    function showPopup(id){ document.getElementById('overlay').style.display='block'; document.getElementById(id).style.display='block'; }
-    function closeAllPopups(){ document.getElementById('overlay').style.display='none'; document.querySelectorAll('.popup').forEach(p=>p.style.display='none'); }
-
-    /* ============ Receipt & Save to Supabase ============ */
-    async function submitOrder(paymentMethod = 'cash') {
+    // Submit order -> save to receipts and receipt_items, then show receipt popup
+    async function submitOrder(payment_type){
       const items = Object.values(order);
-      if(items.length === 0){ alert('ตะกร้าว่าง'); return; }
+      if (!items || items.length === 0) { alert('ยังไม่มีสินค้าในตะกร้า'); return; }
 
-      // build receipt fields - adjust to match your receipts table schema
-      const subtotal = items.reduce((s,i)=> s + i.price*i.quantity, 0);
-      const discountAmt = Math.round(subtotal * (discountPercent/100));
-      const grandTotal = subtotal - discountAmt;
-      const receiptPayload = {
-        order_typ: localStorage.getItem('orderType') || 'ทานที่ร้าน',
-        people_cc: Number(localStorage.getItem('customerCount') || 1),
-        table_num: localStorage.getItem('tableNumber') || null,
-        subtotal: subtotal,
-        discount: discountAmt,
-        tax: 0, // ถ้าคุณคำนวนภาษี ให้ใส่ตรงนี้
-        grand_tot: grandTotal,
-        payment: paymentMethod,
-        created_at: new Date().toISOString()
-      };
+      // compute totals
+      const subtotal = items.reduce((s,i)=> s + i.price * i.quantity, 0);
+      const discount = Math.round(subtotal * (discountPercent/100));
+      const total = subtotal - discount;
 
       try {
         // insert receipt
-        const { data:receiptData, error:rcptErr } = await supabase
+        const { data: receiptData, error: receiptError } = await supabase
           .from('receipts')
-          .insert(receiptPayload)
-          .select().single();
+          .insert([{
+            store_name: "ชายสี่บะหมี่เกี๊ยว กอล์ฟบ้านไผ่",
+            store_address: "95/7 ม.7 ต.ในเมือง อ.บ้านไผ่ จ.ขอนแก่น 40110",
+            store_tax_id: "1409700103387",
+            store_phone: "0823804188",
+            order_type: payment_type,
+            people_count: Number(localStorage.getItem('customerCount') || 1),
+            table_number: localStorage.getItem('tableNumber') || '-',
+            subtotal: subtotal,
+            discount: discount,
+            service_charge: 0,
+            total: total
+          }])
+          .select()
+          .single();
 
-        if (rcptErr) throw rcptErr;
-        const receipt_id = receiptData.id;
+        if (receiptError) throw receiptError;
 
-        // insert items (receipt_items)
-        const itemsPayload = items.map(it => ({
-          receipt_id,
-          item_name: it.name,
-          qty: it.quantity,
-          price: it.price,
-          total_price: it.price * it.quantity
+        // insert receipt items
+        const itemsToInsert = items.map(i => ({
+          receipt_id: receiptData.id,
+          item_name: i.name,
+          qty: i.quantity,
+          price: i.price,
+          total_price: i.price * i.quantity
         }));
 
-        const { data:itemsData, error:itemsErr } = await supabase
-          .from('receipt_items')
-          .insert(itemsPayload);
+        const { error: itemsError } = await supabase.from('receipt_items').insert(itemsToInsert);
+        if (itemsError) throw itemsError;
 
-        if(itemsErr) throw itemsErr;
-
-        // success - show receipt popup
-        renderReceipt(receiptData, itemsPayload);
+        // success -> show receipt popup filled
+        showReceiptPopup(receiptData, itemsToInsert);
         // clear cart
         order = {};
         discountPercent = 0;
-        saveCartToStorage();
-        closeAllPopups();
-        showPopup('receiptPopup');
+        updateCartUI();
       } catch (err) {
         console.error('submitOrder error', err);
-        alert('เกิดข้อผิดพลาดในการบันทึกคำสั่งซื้อ กรุณาลองอีกครั้ง (ดู console)');
+        alert('บันทึกรายการไม่สำเร็จ');
       }
     }
 
-    function renderReceipt(receipt, itemsPayload){
-      const el = document.getElementById('receiptDetails');
-      const rows = itemsPayload.map(i => `<tr><td>${escapeHtml(i.item_name)}</td><td style="text-align:right">${i.qty} x ${i.price}</td><td style="text-align:right">${i.total_price} ฿</td></tr>`).join('');
-      el.innerHTML = `
-        <h2 style="text-align:center;color:#0047AB">ใบเสร็จ</h2>
+    function showReceiptPopup(receiptData, itemsInserted){
+      // build receipt HTML
+      const detailsEl = document.getElementById('receiptDetails');
+      const date = new Date(receiptData.created_at || Date.now());
+      const rows = itemsInserted.map(it => `
+        <tr>
+          <td>${it.item_name}</td>
+          <td style="text-align:center">${it.qty}</td>
+          <td style="text-align:right">${it.total_price} ฿</td>
+        </tr>
+      `).join('');
+
+      const subtotal = receiptData.subtotal || 0;
+      const discount = receiptData.discount || 0;
+      const total = receiptData.total || (subtotal - discount);
+
+      detailsEl.innerHTML = `
+        <h4>เลขที่ใบเสร็จ: ${receiptData.id}</h4>
+        <div>วันที่: ${date.toLocaleString()}</div>
         <table class="receipt-table">
-          <thead><tr><th>รายการ</th><th></th><th style="text-align:right">รวม</th></tr></thead>
+          <thead><tr><th>สินค้า</th><th style="text-align:center">จำนวน</th><th style="text-align:right">ราคา</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
-        <p style="text-align:right;font-weight:700;margin-top:8px">รวมทั้งหมด: ${receipt.grand_tot} ฿</p>
+        <div style="margin-top:10px;">
+          <div>รวมก่อนส่วนลด: ${subtotal} ฿</div>
+          <div>ส่วนลด: ${discount} ฿</div>
+          <div style="font-weight:700;margin-top:6px;">สุทธิ: ${total} ฿</div>
+        </div>
       `;
+
+      showPopup('receiptPopup');
     }
 
-    function closeReceipt(){ closeAllPopups(); }
+    // click sound
+    function playClick(){
+      const s = document.getElementById('clickSound');
+      if (!s) return;
+      s.currentTime = 0;
+      s.play().catch(()=>{ /* auto-play block possible on some browsers */ });
+    }
 
-    /* ============ Helpers on page load ============ */
-    document.addEventListener('DOMContentLoaded', async () => {
-      loadCartFromStorage();
-      await loadMenu();
-    });
-
-    // expose some functions used by onclick attributes
-    window.playClick = playClick;
-    window.openCart = openCart;
-    window.closeCart = closeCart;
-    window.promptDiscountAuth = promptDiscountAuth;
-    window.applyDiscount = applyDiscount;
-    window.removeDiscount = removeDiscount;
-    window.appendPin = appendPin;
-    window.submitPin = submitPin;
-    window.appendCash = appendCash;
-    window.clearCash = clearCash;
-    window.payCash = payCash;
-    window.confirmCash = confirmCash;
-    window.payQR = payQR;
-    window.confirmQR = confirmQR;
-    window.openPaymentPopup = openPaymentPopup;
-    window.closeReceipt = closeReceipt;
-
-    // navigation helpers (customize or remove)
-    function goHome(){ window.location.href = '/'; }
+    // nav
+    function goHome(){ window.location.href = 'index.html'; }
     function goBack(){ window.history.back(); }
+
+    // init
+    loadMenu();
+    updateCartUI();
   </script>
 </body>
 </html>
