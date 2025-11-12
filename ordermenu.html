@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>เมนูอาหาร</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --orange: #FFA500;
@@ -442,7 +443,7 @@
 
 </head>
 
-<body>
+<body onload="loadMenu()">
     <div class="overlay" id="overlay" onclick="closeAllPopups()"></div>
     <header>
         <button class="btn-nav" onclick="playClick(); goHome()">← Home</button>
@@ -552,13 +553,62 @@
     </div>
 
     <script>
-        // 🛠️ แก้ไข: ประกาศตัวแปรและฟังก์ชันที่ใช้ร่วมกันใน Global Scope
+        // ⚠️ ต้องเปลี่ยน URL และ Key ของคุณตรงนี้
+        const SUPABASE_URL = "https://pujxykbpxsncbrlquaxo.supabase.co"; 
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1anh5a2JweHNuY2JybHF1YXhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3OTI0OTIsImV4cCI6MjA3ODM2ODQ5Mn0.JxavkquEZo0W7NME4CJ01GbLKR0_gYFdcKy2BWCrAso";
+
+        // 2. ✅ แก้ไข: สร้าง Supabase Client ใน Global Scope โดยใช้ window.supabase.createClient
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         let order = {};
         let discountPercent = 0;
-        let menuMap = {}; // ใช้เก็บ ID เมนูจาก Supabase
+        let menuMap = {};
+        
+        // ------------------ Menu Loading Logic ----------------
+        // 3. ✅ แก้ไข: ฟังก์ชัน loadMenu ย้ายมาอยู่ Global Scope และใช้ 'supabase' ที่สร้างขึ้น
+        async function loadMenu() {
+            try {
+                const menuGrid = document.getElementById("menuGrid");
+                menuGrid.innerHTML = "กำลังโหลดเมนู...";
 
+                const { data, error } = await supabase
+                    .from("menu")
+                    .select("id,name,price,category,image,available")
+                    .eq("available", true)
+                    .order("id", { ascending: true });
+
+                if (error) {
+                    console.error("Supabase Error:", error.message);
+                    menuGrid.innerHTML = `<p style='color:red;text-align:center;'>❌ ผิดพลาด: ${error.message} (ตรวจสอบ RLS Policy)</p>`;
+                    return;
+                }
+
+                if (!data || data.length === 0) {
+                    menuGrid.innerHTML = "<p style='text-align:center;'>ยังไม่มีเมนู</p>";
+                    return;
+                }
+
+                menuGrid.innerHTML = data.map(item => {
+                    menuMap[item.name] = { id: item.id, price: item.price };
+                    const imageUrl = item.image || 'kshop.jpg';
+
+                    return `
+                        <div class="menu-item" onclick="playClick(); addToOrder({ name: '${item.name.replace(/'/g, "\\'")}', price: ${item.price} })">
+                            <div class="image-placeholder">
+                                <img src="${imageUrl}" alt="${item.name}" onerror="this.src='kshop.jpg'">
+                            </div>
+                            <h3 style="margin:8px 0;font-size:1.1rem;">${item.name}</h3>
+                            <strong style="color:#0047AB;font-size:1.1rem;">${item.price} ฿</strong>
+                        </div>
+                    `;
+                }).join("");
+            } catch (err) {
+                console.error("Error loading menu:", err);
+                document.getElementById("menuGrid").innerHTML = `<p style='color:red;text-align:center;'>เกิดข้อผิดพลาดในการโหลดเมนู: ${err.message}</p>`;
+            }
+        }
+        
         // ------------------ Navigation / Sound ----------------
-        // 🛠️ แก้ไข: ฟังก์ชันนำทางต้องอยู่ Global Scope
         function goHome() { window.location.href = 'index.html'; }
         function goBack() { window.history.back(); }
 
@@ -592,11 +642,12 @@
             osc.stop(audioCtx.currentTime + 0.25);
             if (navigator.vibrate) navigator.vibrate([100, 60, 100]);
         }
-        const _alert = window.alert; // เก็บ alert เดิม
+        const _alert = window.alert; 
         window.alert = function (msg) {
             playError();
             _alert(msg);
         };
+        document.addEventListener("DOMContentLoaded", loadOrderInfo);
         document.addEventListener("click", () => {
             try {
                 if (typeof audioCtx !== "undefined" && audioCtx.state === "suspended") {
@@ -606,7 +657,7 @@
                 }
             } catch (e) { }
         }, { once: true });
-        document.addEventListener("DOMContentLoaded", loadOrderInfo);
+
 
         // ------------------ Popup Control ----------------
         function showPopup(id) {
@@ -623,7 +674,8 @@
         }
         function closeReceipt() { closeAllPopups(); }
 
-        // ------------------ Cart/Order Helpers ----------------
+
+        // ------------------ Cart/Order Logic ----------------
         function loadOrderInfo() {
             const orderType = localStorage.getItem("orderType") || "-";
             const customerCount = localStorage.getItem("customerCount") || "-";
@@ -639,15 +691,14 @@
             document.getElementById('cartButton').style.display = count > 0 ? 'flex' : 'none';
         }
 
-        // ------------------ Order/Cart Logic ----------------
-        window.addToOrder = function(item) {
+        function addToOrder(item) {
             const n = item.name, p = Number(item.price);
             if (!order[n]) order[n] = { price: p, quantity: 1 };
             else order[n].quantity++;
             updateSummary();
             updateCartCount();
         }
-        window.changeQty = function(n, c) {
+        function changeQty(n, c) {
             if (order[n]) {
                 order[n].quantity += c;
                 if (order[n].quantity <= 0) delete order[n];
@@ -655,13 +706,12 @@
                 updateCartCount();
             }
         }
-        window.removeItem = function(n) {
+        function removeItem(n) {
             delete order[n];
             updateSummary();
             updateCartCount();
         }
 
-        // ------------------ Summary/Discount/Payment Flow ----------------
         function calcTaxFromIncluded(totalWithVat) {
             const beforeVat = totalWithVat / 1.07;
             const vatAmount = totalWithVat - beforeVat;
@@ -677,15 +727,14 @@
             for (const n in order) {
                 const it = order[n];
                 subtotal += it.price * it.quantity;
-                // ใช้ window.changeQty และ window.removeItem เพื่อให้เรียกฟังก์ชัน Global ได้
                 items.innerHTML += `
             <div class='order-item'>
                 <div>${n}</div>
                 <div class='controls'>
-                    <button onclick="window.changeQty('${n}',-1)">-</button>
+                    <button onclick="playClick(); changeQty('${n}',-1)">-</button>
                     <span>${it.quantity}</span>
-                    <button onclick="window.changeQty('${n}',1)">+</button>
-                    <button onclick="window.removeItem('${n}')">🗑️</button>
+                    <button onclick="playClick(); changeQty('${n}',1)">+</button>
+                    <button onclick="playClick(); removeItem('${n}')">🗑️</button>
                 </div>
             </div>`;
             }
@@ -710,7 +759,7 @@
             return subtotal - discount;
         }
 
-        window.submitOrder = function() {
+        function submitOrder() {
             if (Object.keys(order).length === 0) {
                 alert('ยังไม่มีรายการสั่งซื้อ');
                 return;
@@ -718,7 +767,7 @@
             showPopup('paymentPopup');
         }
 
-        window.cancelOrder = function() {
+        function cancelOrder() {
             if (confirm('ยืนยันยกเลิกคำสั่งซื้อ?')) {
                 order = {};
                 discountPercent = 0;
@@ -728,39 +777,39 @@
             }
         }
 
-        window.promptDiscountAuth = function() { showPopup('authPopup'); }
-        window.submitPin = function() {
+        function promptDiscountAuth() { showPopup('authPopup'); }
+        function submitPin() {
             const pin = document.getElementById('pinInput').value;
             if (pin === '000000') {
                 closeAllPopups();
                 showPopup('discountPopup');
-                window.clearPin();
+                clearPin();
             } else {
                 alert('รหัสไม่ถูกต้อง');
-                window.clearPin();
+                clearPin();
             }
         }
-        window.applyDiscount = function(p) {
+        function applyDiscount(p) {
             discountPercent = p;
             closeAllPopups();
             updateSummary();
             updateCartCount();
         }
-        window.removeDiscount = function() {
+        function removeDiscount() {
             discountPercent = 0;
             closeAllPopups();
             updateSummary();
             updateCartCount();
         }
-        window.appendPin = function(num) {
+        function appendPin(num) {
             const input = document.getElementById('pinInput');
             if (input.value.length < 6) input.value += num;
         }
-        window.clearPin = function() {
+        function clearPin() {
             document.getElementById('pinInput').value = '';
         }
 
-        window.payCash = function() {
+        function payCash() {
             closeAllPopups();
             const t = getTotal();
             document.getElementById('cashAmount').innerText = t.toFixed(2);
@@ -768,29 +817,30 @@
             clearCash();
         }
 
-        window.payQR = function() {
+        function payQR() {
             closeAllPopups();
             const t = getTotal();
             document.getElementById('qrAmount').innerText = t.toFixed(2);
             showPopup('qrPopup');
         }
-        // 🛠️ แก้ไข: ฟังก์ชัน Keypad เงินสด
-        window.appendCash = function(num) {
+        function appendCash(num) {
             const input = document.getElementById('cashInput');
             input.value += num;
         }
-        window.clearCash = function() {
+
+        function clearCash() {
             document.getElementById('cashInput').value = '';
             document.getElementById('changeDisplay').innerText = '';
         }
 
-        window.confirmCash = async function() {
+        async function confirmCash() {
             const paid = Number(document.getElementById('cashInput').value || 0);
             const t = getTotal();
             if (paid < t) return alert("เงินไม่พอ กรุณาใส่จำนวนเงินให้ถูกต้อง");
             const change = paid - t;
 
             try {
+                // ⚠️ ต้องบันทึก Supabase ตรงนี้
                 // await saveOrderToSupabase('เงินสด');
                 document.getElementById('changeDisplay').innerText = `เงินทอน: ${change.toFixed(2)} ฿`;
                 setTimeout(() => showReceipt('เงินสด', paid, change), 800);
@@ -800,8 +850,9 @@
             }
         }
 
-        window.confirmQR = async function() {
+        async function confirmQR() {
             try {
+                // ⚠️ ต้องบันทึก Supabase ตรงนี้
                 // await saveOrderToSupabase('QR Code');
                 showReceipt('QR Code', getTotal(), 0);
             } catch (err) {
@@ -810,7 +861,6 @@
             }
         }
         
-        // ------------------ Receipt ----------------
         function showReceipt(method, paid, change) {
             const orderType = localStorage.getItem("orderType") || "-";
             const customerCount = localStorage.getItem("customerCount") || "-";
@@ -877,66 +927,11 @@
             updateCartCount();
         }
 
-        window.showCart = function() {
+        function showCart() {
             if (Object.keys(order).length === 0) return alert("ตะกร้าว่างเปล่า");
             showPopup('orderSummary');
-            updateSummary(); // อัปเดตรายการในตะกร้าก่อนแสดง
+            updateSummary();
         }
-
-    </script>
-
-    <script type="module">
-        import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-        // ⚠️ กรุณาตรวจสอบและอัปเดต URL/KEY ให้ถูกต้อง
-        const SUPABASE_URL = "https://pujxykbpxsncbrlquaxo.supabase.co"; 
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1anh5a2JweHNuY2JybHF1YXhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3OTI0OTIsImV4cCI6MjA3ODM2ODQ5Mn0.JxavkquEZo0W7NME4CJ01GbLKR0_gYFdcKy2BWCrAso";
-
-        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-        const menuGrid = document.getElementById("menuGrid");
-
-        async function loadMenu() {
-            try {
-                menuGrid.innerHTML = "กำลังโหลดเมนู...";
-                
-                const { data, error } = await supabase
-                    .from("menu")
-                    .select("id,name,price,category,image,available")
-                    .eq("available", true)
-                    .order("id", { ascending: true });
-
-                if (error) {
-                    console.error("Supabase Error:", error.message);
-                    throw new Error("Failed to fetch menu data. Check RLS Policy for 'menu' table.");
-                }
-
-                if (!data || data.length === 0) {
-                    menuGrid.innerHTML = "<p style='text-align:center;'>ยังไม่มีเมนู</p>";
-                    return;
-                }
-
-                menuGrid.innerHTML = data.map(item => {
-                    window.menuMap[item.name] = { id: item.id, price: item.price }; 
-                    const imageUrl = item.image || 'kshop.jpg'; // ใช้ URL รูปภาพจาก Supabase หรือรูปสำรอง
-
-                    // 🛠️ แก้ไข: เรียกฟังก์ชัน Global ด้วย window.addToOrder
-                    return `
-                        <div class="menu-item" onclick="window.playClick(); window.addToOrder({ name: '${item.name.replace(/'/g, "\\'")}', price: ${item.price} })">
-                            <div class="image-placeholder">
-                                <img src="${imageUrl}" alt="${item.name}" onerror="this.src='kshop.jpg'">
-                            </div>
-                            <h3 style="margin:8px 0;font-size:1.1rem;">${item.name}</h3>
-                            <strong style="color:#0047AB;font-size:1.1rem;">${item.price} ฿</strong>
-                        </div>
-                    `;
-                }).join("");
-            } catch (err) {
-                console.error("Error loading menu:", err);
-                menuGrid.innerHTML = `<p style='color:red;text-align:center;'>เกิดข้อผิดพลาดในการโหลดเมนู: ${err.message}</p>`;
-            }
-        }
-        
-        loadMenu();
 
     </script>
 </body>
