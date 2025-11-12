@@ -382,6 +382,7 @@
         #receiptPopup button:nth-of-type(2) {
             background: linear-gradient(90deg, #999, #777);
             color: white;
+            margin-left: 4%;
         }
 
         #receiptPopup button:hover {
@@ -587,7 +588,7 @@
     <div class="popup" id="cashPopup">
         <h3>ชำระด้วยเงินสด</h3>
         <p>ยอดที่ต้องชำระ: <strong><span id="cashAmount"></span> ฿</strong></p>
-        <input type="text" id="cashInput" placeholder="จำนวนเงินที่ลูกค้าชำระ" readonly />
+        <input type="text" id="cashInput" placeholder="จำนวนเงินที่ลูกค้าชำระ" readonly /> 
 
         <div class="keypad">
             <button onclick="playClick(); appendCash('1')">1</button>
@@ -636,12 +637,11 @@
         <button onclick="playClick(); closeReceipt()">กลับหน้าแรก</button>
     </div>
 
-    <button id="payButton" style="display:none;">ชำระเงิน</button> <div id="cartButton" class="cart-button" onclick="showCart()">
+    <div id="cartButton" class="cart-button" onclick="showCart()">
         🛒 <span id="cartCount">0</span>
     </div>
 
     <script>
-        // 🛠️ แก้ไข: กำหนดตัวแปรและฟังก์ชันที่ใช้ใน HTML ให้อยู่ใน Global Scope
         let order = {}, discountPercent = 0;
         let menuMap = {}; // ใช้เก็บ ID เมนูจาก Supabase
 
@@ -693,11 +693,13 @@
             osc.stop(audioCtx.currentTime + 0.25);
             if (navigator.vibrate) navigator.vibrate([100, 60, 100]);
         }
+        
+        const _alert = window.alert; // เก็บ alert เดิม
         window.alert = function (msg) {
             playError();
             _alert(msg);
         };
-        const _alert = window.alert; // เก็บ alert เดิม
+        
         document.addEventListener("DOMContentLoaded", loadOrderInfo);
         document.addEventListener("click", () => {
             try {
@@ -726,7 +728,7 @@
             document.getElementById('cartButton').style.display = count > 0 ? 'flex' : 'none';
         }
 
-        // ------------------ Order/Cart Logic (ต้องถูกเรียกจาก Module) ----------------
+        // ------------------ Order/Cart Logic ----------------
         window.addToOrder = function(item) {
             const n = item.name, p = Number(item.price);
             if (!order[n]) order[n] = { price: p, quantity: 1 };
@@ -748,7 +750,7 @@
             window.updateCartCount();
         }
 
-        // ------------------ Summary/Discount/Payment Flow (ต้องถูกเรียกจาก Module) ----------------
+        // ------------------ Summary/Discount/Payment Flow ----------------
         function updateSummary() {
             const items = document.getElementById('orderItems'),
                 t = document.getElementById('totalSummary');
@@ -862,6 +864,7 @@
         }
         window.appendCash = function(num) {
             const input = document.getElementById('cashInput');
+            // ✅ อนุญาตให้กรอกได้ไม่จำกัด (สำหรับการชำระเงิน)
             input.value += num;
         }
 
@@ -899,17 +902,75 @@
         }
         
         // ------------------ Receipt ----------------
+        // 🛠️ แก้ไข: นำโค้ดใบเสร็จกลับมาใส่
         function showReceipt(method, paid, change) {
-            // ... (โค้ดแสดงใบเสร็จ) ...
+            const orderType = localStorage.getItem("orderType") || "-";
+            const customerCount = localStorage.getItem("customerCount") || "-";
+            const tableNumber = localStorage.getItem("tableNumber") || "-";
             closeAllPopups();
 
-            // ล้างข้อมูลหลังบันทึก Supabase สำเร็จแล้ว
+            let html = `
+            <div style="margin-bottom:10px; font-weight:600;">
+                🍽️ ${orderType} | 👥 ${customerCount} คน | 🪑 โต๊ะ ${tableNumber}
+            </div>
+            <table class="receipt-table">
+                <tr>
+                    <th style="width:60%; text-align:left;">รายการ</th>
+                    <th style="width:20%; text-align:center;">จำนวน</th>
+                    <th style="width:20%; text-align:right;">ราคา</th>
+                </tr>`;
+
+            let subtotal = 0, totalQty = 0;
+            for (const n in order) {
+                const it = order[n];
+                subtotal += it.price * it.quantity;
+                totalQty += it.quantity;
+                html += `
+                <tr>
+                    <td>${n}</td>
+                    <td style="text-align:center;">${it.quantity}</td>
+                    <td style="text-align:right;">${(it.price * it.quantity).toFixed(2)}</td>
+                </tr>`;
+            }
+
+            const discount = subtotal * (discountPercent / 100);
+            const totalAfterDiscount = subtotal - discount;
+            const { beforeVat, vatAmount } = calcTaxFromIncluded(totalAfterDiscount);
+            const net = totalAfterDiscount;
+
+            html += `
+            <tr>
+                <td colspan="3" style="text-align:left; font-weight:bold;">รวมทั้งหมด: ${totalQty} รายการ</td>
+            </tr>
+            </table>
+
+            <div style="display:flex; justify-content:space-between; margin-top:10px; border-top: 1px dashed rgba(0,0,0,0.15); padding-top: 10px;">
+                <div style="text-align:left; font-size:0.9rem;">
+                    วิธีชำระ: ${method}<br>
+                    ${method === 'เงินสด' ? `ชำระมา: ${paid.toFixed(2)} ฿<br>เงินทอน: ${change.toFixed(2)} ฿<br>` : ''}
+                    วันที่: ${new Date().toLocaleString('th-TH')}
+                </div>
+                <div style="text-align:right; font-size:0.9rem;">
+                    ยอดรวม (รวมภาษี): ${subtotal.toFixed(2)} ฿<br>
+                    ส่วนลด (${discountPercent}%): ${discount.toFixed(2)} ฿<br>
+                    ราคาก่อนภาษี: ${beforeVat.toFixed(2)} ฿<br>
+                    ภาษี (7%): ${vatAmount.toFixed(2)} ฿<br>
+                    <strong>ราคาสุทธิ: ${net.toFixed(2)} ฿</strong>
+                </div>
+            </div>`;
+
+            document.getElementById('receiptDetails').innerHTML = html;
+            showPopup('receiptPopup');
+
+            // ✅ ต้องส่ง payload ไป n8n ตรงนี้
+
+            // ✅ ล้างข้อมูลหลังบันทึก Supabase สำเร็จแล้ว
             order = {};
             discountPercent = 0;
             updateSummary();
             window.updateCartCount();
-            showPopup('receiptPopup');
         }
+
         function closeReceipt() { closeAllPopups(); }
 
         window.showCart = function() {
@@ -932,8 +993,8 @@
         async function loadMenu() {
             try {
                 menuGrid.innerHTML = "กำลังโหลดเมนู...";
-                // ⚠️ เนื่องจาก RLS Policy ของคุณยังไม่สมบูรณ์สำหรับ SELECT
-                // หากยังไม่ใส่ RLS Policy 'For SELECT: to public, using: true' ให้ใช้ select() ธรรมดาไปก่อน
+                
+                // 🛠️ แก้ไข: ดึงข้อมูลเมนูจาก Supabase (แทน Google Apps Script)
                 const { data, error } = await supabase
                     .from("menu")
                     .select("id,name,price,category,image,available")
@@ -952,9 +1013,9 @@
 
                 menuGrid.innerHTML = data.map(item => {
                     // เก็บ ID เมนูไว้ใน menuMap (Global)
-                    menuMap[item.name] = { id: item.id, price: item.price }; 
+                    window.menuMap[item.name] = { id: item.id, price: item.price }; 
 
-                    // ✅ ใช้ window.addToOrder เพราะฟังก์ชันถูกประกาศนอก module
+                    // 🛠️ แก้ไข: นำ URL รูปภาพจาก Supabase (item.image) มาแสดง
                     return `
                         <div class="menu-item" onclick="window.playClick(); window.addToOrder({ name: '${item.name.replace(/'/g, "\\'")}', price: ${item.price} })">
                             <div class="image-placeholder">
@@ -971,28 +1032,8 @@
             }
         }
         
-        // 🛠️ แก้ไข: ฟังก์ชันที่ใช้ใน Module ต้องเรียกฟังก์ชัน Global ด้วย window.
-        window.updateCart = function() {
-            const items = Object.values(window.order);
-            const total = items.reduce((s, i) => s + i.price * i.quantity, 0);
-            document.getElementById("orderItems").innerHTML = items.map(it => `
-                <div class="order-item"><span>${it.name} x ${it.quantity}</span><strong>${it.price * it.quantity} ฿</strong></div>
-            `).join("");
-            document.getElementById("totalSummary").innerHTML = `รวมทั้งหมด: ${total} ฿`;
-            window.updateCartCount(); // ✅ เรียกฟังก์ชัน Global
-        };
-        
-        // 🛠️ แก้ไข: ฟังก์ชันสั่ง/ยืนยันการชำระเงินเดิม
-        window.addToCart = function(id, name, price) {
-            window.playClick();
-            if (!order[name]) order[name] = { name, price, quantity: 0 };
-            order[name].quantity++;
-            window.updateCart(); // ✅ เรียกฟังก์ชัน Global
-        };
-
         loadMenu();
 
     </script>
-
 </body>
 </html>
