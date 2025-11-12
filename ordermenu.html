@@ -151,7 +151,7 @@
             margin-bottom: 10px;
             overflow: hidden;
         }
-        
+
         .image-placeholder img {
             width: 100%;
             height: 100%;
@@ -681,7 +681,7 @@
             const itemRecords = items.map(item => ({
                 receipt_id: receiptId,
                 // ใช้ menuMap ค้นหา ID ของเมนูจากชื่อ
-                menu_item_id: menuMap[item.name] ? menuMap[item.name].id : null, 
+                menu_item_id: menuMap[item.name] ? menuMap[item.name].id : null,
                 item_name: item.name,
                 qty: item.quantity,
                 price: item.price,
@@ -721,7 +721,7 @@
 
                 g.innerHTML = data.map(item => {
                     // เก็บ ID เมนูไว้ใน menuMap เพื่อใช้ตอนบันทึกใบเสร็จ
-                    menuMap[item.name] = { id: item.id, price: item.price }; 
+                    menuMap[item.name] = { id: item.id, price: item.price };
 
                     return `
                         <div class="menu-item" onclick="playClick(); addToOrder({ name: '${item.name.replace(/'/g, "\\'")}', price: ${item.price} })">
@@ -776,12 +776,12 @@
             discountPercent = p;
             closeAllPopups();
             updateSummary();
-            updateCartCount(); // ✅ อัปเดตจำนวนตะกร้า
+            window.updateCartCount(); // ✅ แก้ไขตรงนี้
         }
         function removeDiscount() {
             discountPercent = 0;
             updateSummary();
-            updateCartCount(); // ✅ อัปเดตจำนวนตะกร้า
+            window.updateCartCount(); // ✅ แก้ไขตรงนี้
         }
 
         // ---------------- Keypad สำหรับ PIN ----------------
@@ -799,20 +799,20 @@
             if (!order[n]) order[n] = { price: p, quantity: 1 };
             else order[n].quantity++;
             updateSummary();
-            updateCartCount(); // ✅ อัปเดตจำนวนตะกร้า
+            window.updateCartCount(); // ✅ แก้ไขตรงนี้
         }
         function changeQty(n, c) {
             if (order[n]) {
                 order[n].quantity += c;
                 if (order[n].quantity <= 0) delete order[n];
                 updateSummary();
-                updateCartCount(); // ✅ อัปเดตจำนวนตะกร้า
+                window.updateCartCount(); // ✅ แก้ไขตรงนี้
             }
         }
         function removeItem(n) {
             delete order[n];
             updateSummary();
-            updateCartCount(); // ✅ อัปเดตจำนวนตะกร้า
+            window.updateCartCount(); // ✅ แก้ไขตรงนี้
         }
         // ---------------- ฟังก์ชันสรุปยอด ----------------
         function updateSummary() {
@@ -875,7 +875,7 @@
                 order = {};
                 discountPercent = 0;
                 updateSummary();
-                updateCartCount(); // ✅ อัปเดตจำนวนตะกร้า
+                window.updateCartCount(); // ✅ แก้ไขตรงนี้
             }
         }
         // ---------------- Keypad สำหรับเงินสด ----------------
@@ -1005,7 +1005,7 @@
             order = {};
             discountPercent = 0;
             updateSummary();
-            updateCartCount();
+            window.updateCartCount(); // ✅ แก้ไขตรงนี้
         }
 
         function closeReceipt() { closeAllPopups(); }
@@ -1041,7 +1041,7 @@
         document.addEventListener("DOMContentLoaded", loadOrderInfo);
 
         // 🛒 อัปเดตจำนวนในตะกร้า
-        function updateCartCount() {
+        window.updateCartCount = function() { // ✅ ทำให้เป็น window function
             const count = Object.values(order).reduce((sum, item) => sum + item.quantity, 0);
             document.getElementById('cartCount').innerText = count;
             document.getElementById('cartButton').style.display = count > 0 ? 'flex' : 'none';
