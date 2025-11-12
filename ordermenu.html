@@ -773,6 +773,8 @@
         }
 
         function calcTaxFromIncluded(totalWithVat) {
+            // ป้องกันค่าที่ไม่ใช่ตัวเลข
+            totalWithVat = Number(totalWithVat) || 0; 
             const beforeVat = totalWithVat / 1.07;
             const vatAmount = totalWithVat - beforeVat;
             return {
@@ -822,13 +824,18 @@
         function getTotal() {
             let subtotal = Object.values(order).reduce((s, i) => s + i.price * i.quantity, 0);
             const discount = subtotal * (discountPercent / 100);
-            return subtotal - discount;
+            // 🛑 ป้องกันค่าติดลบที่นี่
+            return Math.max(0, subtotal - discount); 
         }
 
         function submitOrder() {
             if (Object.keys(order).length === 0) {
                 alert('ยังไม่มีรายการสั่งซื้อ');
                 return;
+            }
+            if (getTotal() <= 0) {
+                 alert('ยอดชำระเป็น 0 หรือติดลบ กรุณาตรวจสอบส่วนลด');
+                 return;
             }
             showPopup('paymentPopup');
         }
@@ -907,15 +914,24 @@
             document.getElementById('changeDisplay').innerText = '';
         }
 
-        // 🚀 ฟังก์ชันบันทึกข้อมูล (แก้ไขให้ใช้คอลัมน์ 'order_type')
+        // 🚀 ฟังก์ชันบันทึกข้อมูล (แก้ไข total_amount และใช้คอลัมน์ 'order_type')
         async function saveOrderToSupabase(method) {
+            // 1. คำนวณค่าทั้งหมด
             const subtotal = Object.values(order).reduce((s, i) => s + i.price * i.quantity, 0);
             const discount = subtotal * (discountPercent / 100);
-            const total = subtotal - discount;
+            
+            // 🛑 ตรวจสอบและทำให้แน่ใจว่า total_amount ไม่เป็นค่าว่างหรือติดลบ
+            const total = Math.max(0, subtotal - discount); 
+            
+            if (total <= 0) {
+                // ป้องกันการส่งค่า 0 หรือติดลบไปยัง NOT NULL column
+                throw new Error("Invalid total amount (<= 0). Cannot save order."); 
+            }
+            
             const {
                 beforeVat,
                 vatAmount
-            } = calcTaxFromIncluded(total);
+            } = calcTaxFromIncluded(total); // ใช้ค่า total ที่ถูกกรองแล้ว
 
             const tableNumber = localStorage.getItem("tableNumber") || null;
             const orderType = localStorage.getItem("orderType") || null;
@@ -924,7 +940,6 @@
             // 2.1. บันทึกเข้าตาราง receipts ก่อน 
             const receiptData = {
                 table_number: tableNumber,
-                // ✅ แก้ไขให้ใช้ชื่อคอลัมน์ที่ถูกต้องตามตารางของคุณ: 'order_type'
                 order_type: orderType, 
                 customer_count: customerCount,
                 discount_percent: discountPercent,
@@ -932,7 +947,8 @@
                 discount_amount: discount,
                 total_before_tax: beforeVat,
                 tax_amount: vatAmount,
-                total_amount: total,
+                // ✅ ส่งค่า total ที่ถูกกรองแล้วไปยัง total_amount
+                total_amount: total, 
                 payment_method: method
             };
 
@@ -945,7 +961,10 @@
                 .select('id') // ดึง ID กลับมาเท่านั้น
                 .single();
 
-            if (receiptError) throw receiptError;
+            if (receiptError) {
+                console.error("Supabase Receipt INSERT Error:", receiptError);
+                throw receiptError;
+            }
 
             // 2.2. บันทึกเข้าตาราง receipt_items
             const receiptId = receipt.id;
@@ -967,7 +986,10 @@
                 .from('receipt_items')
                 .insert(itemsToInsert);
 
-            if (itemsError) throw itemsError;
+            if (itemsError) {
+                console.error("Supabase Item INSERT Error:", itemsError);
+                throw itemsError;
+            }
 
             return receiptId;
         }
@@ -975,18 +997,17 @@
 
         async function confirmCash() {
             const paid = Number(document.getElementById('cashInput').value || 0);
-            const t = getTotal();
+            const t = getTotal(); // ใช้ getTotal() ที่ถูกกรองแล้ว
+
             if (paid < t) return alert("เงินไม่พอ กรุณาใส่จำนวนเงินให้ถูกต้อง");
             const change = paid - t;
 
             try {
                 await saveOrderToSupabase('เงินสด'); 
                 document.getElementById('changeDisplay').innerText = `เงินทอน: ${change.toFixed(2)} ฿`;
-                // หน่วงเวลาเล็กน้อยก่อนแสดงใบเสร็จ
                 setTimeout(() => showReceipt('เงินสด', paid, change), 800);
             } catch (err) {
                 console.error("Supabase INSERT Error:", err);
-                // 💡 ปรับปรุงข้อความ Error
                 alert(`❌ บันทึกคำสั่งซื้อไม่สำเร็จ! (Error: ${err.message}). กรุณาตรวจสอบ Console (F12)`); 
                 document.getElementById('changeDisplay').innerText = `บันทึกไม่สำเร็จ`;
             }
@@ -998,7 +1019,6 @@
                 showReceipt('QR Code', getTotal(), 0);
             } catch (err) {
                 console.error("Supabase INSERT Error:", err);
-                // 💡 ปรับปรุงข้อความ Error
                 alert(`❌ บันทึกคำสั่งซื้อไม่สำเร็จ! (Error: ${err.message}). กรุณาตรวจสอบ Console (F12)`);
             }
         }
