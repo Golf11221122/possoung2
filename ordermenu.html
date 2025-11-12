@@ -624,8 +624,12 @@
                     return;
                 }
 
-                menuGrid.innerHTML = data.map(item => {
+                // **🛑 การสร้าง menuMap: ต้องมั่นใจว่าเก็บ id ไว้**
+                data.forEach(item => {
                     menuMap[item.name] = { id: item.id, price: item.price };
+                });
+                
+                menuGrid.innerHTML = data.map(item => {
                     const imageUrl = item.image || 'kshop.jpg';
 
                     return `
@@ -746,11 +750,19 @@
         function addToOrder(item) {
             const n = item.name,
                 p = Number(item.price);
-            if (!menuMap[n]) return alert(`ไม่พบ ID เมนูสำหรับ ${n}`); 
+            
+            // **🛑 การตรวจสอบ menu_id อย่างเข้มงวด**
+            const menuInfo = menuMap[n];
+            if (!menuInfo || typeof menuInfo.id === 'undefined' || menuInfo.id === null) {
+                alert(`❌ ผิดพลาด: ไม่พบรหัส ID ของเมนู "${n}" ในระบบ (menuMap[${n}].id)`); 
+                console.error("เมนู ID หาย:", n, menuMap[n]);
+                return;
+            }
+
             if (!order[n]) order[n] = {
                 price: p,
                 quantity: 1,
-                menu_id: menuMap[n].id
+                menu_id: menuInfo.id // ใช้ ID ที่ได้จากการตรวจสอบ
             };
             else order[n].quantity++;
             updateSummary();
@@ -912,7 +924,7 @@
             document.getElementById('changeDisplay').innerText = '';
         }
 
-        // 🚀 ฟังก์ชันบันทึกข้อมูล (แก้ไข order_type, table_number, total_amount อย่างรัดกุม)
+        // 🚀 ฟังก์ชันบันทึกข้อมูล (แก้ไข order_type, table_number, total_amount, และ menu_id อย่างรัดกุม)
         async function saveOrderToSupabase(method) {
             // 1. คำนวณค่าทั้งหมด
             const subtotal = Object.values(order).reduce((s, i) => s + i.price * i.quantity, 0);
@@ -937,8 +949,8 @@
             // 2.1. บันทึกเข้าตาราง receipts ก่อน 
             const receiptData = {
                 table_number: tableNumber,
-                order_type: orderType, // ✅ มั่นใจว่ามีค่าเป็น 'Takeaway' หากไม่มี
-                customer_count: customerCount, // ✅ มั่นใจว่ามีค่าเป็น 1 หากไม่มี
+                order_type: orderType, 
+                customer_count: customerCount, 
                 discount_percent: discountPercent,
                 subtotal: subtotal,
                 discount_amount: discount,
@@ -959,6 +971,7 @@
 
             if (receiptError) {
                 console.error("Supabase Receipt INSERT Error:", receiptError);
+                alert(`❌ บันทึกใบเสร็จไม่สำเร็จ! (Error: ${receiptError.message}). กรุณาตรวจสอบ Console (F12)`);
                 throw receiptError;
             }
 
@@ -966,15 +979,34 @@
             const receiptId = receipt.id;
             const itemsToInsert = Object.keys(order).map(itemName => {
                 const item = order[itemName];
+                
+                // **🛑 การตรวจสอบและดึง menu_id อย่างรอบคอบ**
+                const menuInfo = menuMap[itemName];
+                const finalMenuId = (menuInfo && menuInfo.id) ? menuInfo.id : item.menu_id;
+
+                if (typeof finalMenuId === 'undefined' || finalMenuId === null) {
+                     console.error(`❌ ข้ามรายการ: ${itemName} เพราะไม่พบ menu_id ที่ถูกต้อง (menuMap หรือ order object)`);
+                     // **สำคัญ:** หากหา ID ไม่ได้ ต้องข้ามรายการนี้ไป ไม่ใช่ส่ง null
+                     return null; 
+                }
+
                 return {
                     receipt_id: receiptId,
-                    menu_id: item.menu_id,
+                    menu_id: finalMenuId, // ใช้ค่าที่ถูกตรวจสอบแล้ว
                     item_name: itemName,
                     price_per_unit: item.price,
                     quantity: item.quantity,
                     total_price: item.price * item.quantity
                 };
-            });
+            }).filter(item => item !== null); // กรองรายการที่เป็น null ออกไป
+
+            // **🛑 ป้องกันกรณี itemsToInsert เป็นอาร์เรย์ว่าง**
+            if (itemsToInsert.length === 0) {
+                 // หากไม่มีรายการสินค้าที่ถูกต้องให้บันทึก (เพราะถูกกรองออกหมด)
+                 console.warn("ไม่มีรายการสินค้าที่ถูกต้องให้บันทึกใน receipt_items!");
+                 // สามารถเพิ่มโค้ดลบ receipt ที่บันทึกไปก่อนหน้าได้ ถ้าต้องการ
+                 return receiptId; 
+            }
 
             const {
                 error: itemsError
@@ -984,6 +1016,7 @@
 
             if (itemsError) {
                 console.error("Supabase Item INSERT Error:", itemsError);
+                alert(`❌ บันทึกรายการสินค้าไม่สำเร็จ! (Error: ${itemsError.message}). กรุณาตรวจสอบ Console (F12)`);
                 throw itemsError;
             }
 
@@ -1004,7 +1037,7 @@
                 setTimeout(() => showReceipt('เงินสด', paid, change), 800);
             } catch (err) {
                 console.error("Supabase INSERT Error:", err);
-                alert(`❌ บันทึกคำสั่งซื้อไม่สำเร็จ! (Error: ${err.message}). กรุณาตรวจสอบ Console (F12)`); 
+                // alert ถูกเรียกใน saveOrderToSupabase แล้ว
                 document.getElementById('changeDisplay').innerText = `บันทึกไม่สำเร็จ`;
             }
         }
@@ -1015,7 +1048,7 @@
                 showReceipt('QR Code', getTotal(), 0);
             } catch (err) {
                 console.error("Supabase INSERT Error:", err);
-                alert(`❌ บันทึกคำสั่งซื้อไม่สำเร็จ! (Error: ${err.message}). กรุณาตรวจสอบ Console (F12)`);
+                // alert ถูกเรียกใน saveOrderToSupabase แล้ว
             }
         }
 
