@@ -280,6 +280,14 @@
             background: linear-gradient(90deg, #FFC04D, #FFA500) !important;
         }
 
+        #qrPopup img {
+            /* 1. ✅ แก้ไข: ปรับขนาด QR Code */
+            display: block;
+            margin: 10px auto;
+            max-width: 75%; /* 3/4 ของหน้าจอ */
+            height: auto;
+        }
+
         #receiptPopup {
             width: 320px !important;
             max-height: 90vh;
@@ -296,30 +304,37 @@
             margin-bottom: 8px;
         }
 
-        #receiptPopup button {
+        #receiptPopup .receipt-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        #receiptPopup .receipt-actions button {
+            /* 2. ✅ แก้ไข: จัดปุ่มให้อยู่บรรทัดเดียวกัน */
+            flex: 1;
             display: inline-block;
-            width: 48%;
             border-radius: 10px;
             padding: 10px 0;
             font-weight: 600;
             border: none;
             cursor: pointer;
-            margin-top: 10px;
             transition: transform 0.2s ease;
+            margin: 0; /* ล้าง margin เดิม */
         }
 
-        #receiptPopup button:first-of-type {
+        #receiptPopup .receipt-actions button:first-of-type {
             background: linear-gradient(90deg, #4CAF50, #45A049);
             color: white;
         }
 
-        #receiptPopup button:nth-of-type(2) {
+        #receiptPopup .receipt-actions button:nth-of-type(2) {
             background: linear-gradient(90deg, #999, #777);
             color: white;
-            margin-left: 4%;
         }
 
-        #receiptPopup button:hover {
+        #receiptPopup .receipt-actions button:hover {
             transform: scale(1.05);
         }
 
@@ -333,7 +348,7 @@
         }
 
         @media print {
-            #receiptPopup button {
+            #receiptPopup .receipt-actions button {
                 display: none !important;
             }
 
@@ -544,8 +559,10 @@
         <h4 style="text-align:center;">ใบกำกับภาษีอย่างย่อ/🧾 ใบเสร็จรับเงิน</h4>
         <div id="receiptDetails"></div>
         <h5 style="text-align:center;">ขอขอบพระคุณลูกค้าที่มาอุดหนุน</h5>
-        <button onclick="playClick(); window.print()">🖨️ พิมพ์ใบเสร็จ</button>
-        <button onclick="playClick(); closeReceipt()">กลับหน้าแรก</button>
+        <div class="receipt-actions">
+            <button onclick="playClick(); window.print()">🖨️ พิมพ์ใบเสร็จ</button>
+            <button onclick="playClick(); closeReceipt()">กลับหน้าแรก</button>
+        </div>
     </div>
 
     <div id="cartButton" class="cart-button" onclick="showCart()">
@@ -553,19 +570,18 @@
     </div>
 
     <script>
-        // ⚠️ ต้องเปลี่ยน URL และ Key ของคุณตรงนี้
+        // ⚠️ กรุณาตรวจสอบและอัปเดต URL/KEY ให้ถูกต้อง
         const SUPABASE_URL = "https://pujxykbpxsncbrlquaxo.supabase.co"; 
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1anh5a2JweHNuY2JybHF1YXhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3OTI0OTIsImV4cCI6MjA3ODM2ODQ5Mn0.JxavkquEZo0W7NME4CJ01GbLKR0_gYFdcKy2BWCrAso";
 
-        // 2. ✅ แก้ไข: สร้าง Supabase Client ใน Global Scope โดยใช้ window.supabase.createClient
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const { createClient } = window.supabase;
+        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let order = {};
         let discountPercent = 0;
         let menuMap = {};
         
         // ------------------ Menu Loading Logic ----------------
-        // 3. ✅ แก้ไข: ฟังก์ชัน loadMenu ย้ายมาอยู่ Global Scope และใช้ 'supabase' ที่สร้างขึ้น
         async function loadMenu() {
             try {
                 const menuGrid = document.getElementById("menuGrid");
@@ -607,6 +623,10 @@
                 document.getElementById("menuGrid").innerHTML = `<p style='color:red;text-align:center;'>เกิดข้อผิดพลาดในการโหลดเมนู: ${err.message}</p>`;
             }
         }
+        
+        // ------------------ Navigation / Sound / Popups (Code Omitted for Brevity - No Changes) ----------------
+
+        // ... [ฟังก์ชัน goHome, goBack, playClick, showPopup, closeAllPopups, ฯลฯ] ...
         
         // ------------------ Navigation / Sound ----------------
         function goHome() { window.location.href = 'index.html'; }
@@ -693,7 +713,7 @@
 
         function addToOrder(item) {
             const n = item.name, p = Number(item.price);
-            if (!order[n]) order[n] = { price: p, quantity: 1 };
+            if (!order[n]) order[n] = { price: p, quantity: 1, menu_id: menuMap[n].id }; // เพิ่ม menu_id
             else order[n].quantity++;
             updateSummary();
             updateCartCount();
@@ -833,6 +853,64 @@
             document.getElementById('changeDisplay').innerText = '';
         }
 
+        // 3. ✅ เพิ่มฟังก์ชันบันทึกข้อมูล
+        async function saveOrderToSupabase(method) {
+            const subtotal = Object.values(order).reduce((s, i) => s + i.price * i.quantity, 0);
+            const discount = subtotal * (discountPercent / 100);
+            const total = subtotal - discount;
+            const { beforeVat, vatAmount } = calcTaxFromIncluded(total);
+            
+            const tableNumber = localStorage.getItem("tableNumber") || null;
+            const orderType = localStorage.getItem("orderType") || null;
+            const customerCount = parseInt(localStorage.getItem("customerCount")) || null;
+
+            // 3.1. บันทึกเข้าตาราง receipts ก่อน
+            const receiptData = {
+                table_number: tableNumber,
+                order_type: orderType,
+                customer_count: customerCount,
+                discount_percent: discountPercent,
+                subtotal: subtotal,
+                discount_amount: discount,
+                total_before_tax: beforeVat,
+                tax_amount: vatAmount,
+                total_amount: total,
+                payment_method: method
+            };
+
+            const { data: receipt, error: receiptError } = await supabase
+                .from('receipts')
+                .insert([receiptData])
+                .select()
+                .single();
+
+            if (receiptError) throw receiptError;
+            
+            // 3.2. บันทึกเข้าตาราง receipt_items
+            const receiptId = receipt.id;
+            const itemsToInsert = Object.keys(order).map(itemName => {
+                const item = order[itemName];
+                return {
+                    receipt_id: receiptId,
+                    menu_id: item.menu_id,
+                    item_name: itemName,
+                    price_per_unit: item.price,
+                    quantity: item.quantity,
+                    total_price: item.price * item.quantity
+                };
+            });
+
+            const { error: itemsError } = await supabase
+                .from('receipt_items')
+                .insert(itemsToInsert);
+
+            if (itemsError) throw itemsError;
+
+            return receiptId;
+        }
+
+
+        // 3. ✅ แก้ไข: นำ Comment ออกเพื่อเรียกใช้ saveOrderToSupabase()
         async function confirmCash() {
             const paid = Number(document.getElementById('cashInput').value || 0);
             const t = getTotal();
@@ -840,24 +918,23 @@
             const change = paid - t;
 
             try {
-                // ⚠️ ต้องบันทึก Supabase ตรงนี้
-                // await saveOrderToSupabase('เงินสด');
+                await saveOrderToSupabase('เงินสด');
                 document.getElementById('changeDisplay').innerText = `เงินทอน: ${change.toFixed(2)} ฿`;
                 setTimeout(() => showReceipt('เงินสด', paid, change), 800);
             } catch (err) {
                 console.error("Supabase INSERT Error:", err);
-                alert("❌ บันทึกคำสั่งซื้อไม่สำเร็จ! กรุณาตรวจสอบ Policy");
+                alert(`❌ บันทึกคำสั่งซื้อไม่สำเร็จ! (${err.message})`);
             }
         }
 
+        // 3. ✅ แก้ไข: นำ Comment ออกเพื่อเรียกใช้ saveOrderToSupabase()
         async function confirmQR() {
             try {
-                // ⚠️ ต้องบันทึก Supabase ตรงนี้
-                // await saveOrderToSupabase('QR Code');
+                await saveOrderToSupabase('QR Code');
                 showReceipt('QR Code', getTotal(), 0);
             } catch (err) {
                 console.error("Supabase INSERT Error:", err);
-                alert("❌ บันทึกคำสั่งซื้อไม่สำเร็จ! กรุณาตรวจสอบ Policy");
+                alert(`❌ บันทึกคำสั่งซื้อไม่สำเร็จ! (${err.message})`);
             }
         }
         
