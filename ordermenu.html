@@ -6,7 +6,6 @@
   <title>เมนูอาหาร</title>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    /* (ใส่ CSS ของคุณเดิมทั้งหมดเพื่อให้ UI เหมือนเดิม) */
     :root{--orange:#FFA500;--orange-2:#FFB84D;--blue:#0047AB;--blue-2:#0066CC;--white:#FFFFFF;--glass:rgba(255,255,255,0.9)}
     body{font-family:'Prompt',sans-serif;background:linear-gradient(135deg,var(--orange) 0%,#fff 60%,var(--blue));color:#002366;margin:0;padding:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
     header{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;background:transparent;gap:10px}
@@ -51,472 +50,106 @@
     .cart-button{position:fixed;bottom:18px;right:18px;background:linear-gradient(90deg,#0047AB,#0066CC);color:white;border-radius:50px;padding:12px 18px;font-size:1.1rem;font-weight:700;box-shadow:0 4px 10px rgba(0,0,0,0.3);z-index:1100;cursor:pointer;transition:transform .15s}
     .cart-button:hover{transform:scale(1.05)}
     .cart-button span{background:#FF4500;border-radius:12px;padding:2px 6px;font-size:.9rem;margin-left:4px}
-    /* end css */
   </style>
 </head>
+
 <body>
   <div class="overlay" id="overlay" onclick="closeAllPopups()"></div>
-
   <header>
-    <button class="btn-nav" onclick="playClick(); goHome()">← Home</button>
-    <button class="btn-nav" onclick="playClick(); goBack()">← Back</button>
+    <button class="btn-nav" onclick="goHome()">← Home</button>
+    <button class="btn-nav" onclick="goBack()">← Back</button>
   </header>
 
   <h1>เมนูอาหาร</h1>
-
   <div class="container">
     <div class="order-summary" id="orderSummary" style="display:none;">
       <h3>รายการสั่งซื้อ</h3>
-      <div id="orderInfo" style="text-align:center;margin-bottom:8px;font-weight:600;color:#0047AB;"></div>
       <div id="orderItems"></div>
       <div class="summary-total" id="totalSummary"></div>
-      <button onclick="playClick(); closeCart()">➕ กลับไปสั่งเพิ่ม</button>
-      <button onclick="playClick(); promptDiscountAuth()">🎁 ส่วนลด</button>
-      <button onclick="playClick(); submitOrder()">✅ ชำระเงิน</button>
-      <button onclick="playClick(); cancelOrder()">❌ ยกเลิก</button>
-      <button onclick="playClick(); removeDiscount()">🧹 ลบส่วนลด</button>
+      <button onclick="closeCart()">➕ กลับไปสั่งเพิ่ม</button>
+      <button onclick="promptDiscountAuth()">🎁 ส่วนลด</button>
+      <button onclick="payQR()">✅ ชำระ QR</button>
+      <button onclick="payCash()">💵 เงินสด</button>
     </div>
 
     <div class="menu-grid" id="menuGrid">กำลังโหลดเมนู...</div>
-  </div>
-
-  <!-- popups (discount/auth/cash/qr/receipt) - keep ids same as UI -->
-  <div class="popup" id="discountPopup">
-    <h3 style="color:#0047AB;margin-bottom:14px;">🎁 เลือกระดับส่วนลด</h3>
-    <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
-      <button class="discount-btn" onclick="playClick(); applyDiscount(5)">5%</button>
-      <button class="discount-btn" onclick="playClick(); applyDiscount(10)">10%</button>
-      <button class="discount-btn" onclick="playClick(); applyDiscount(15)">15%</button>
-      <button class="discount-btn" onclick="playClick(); applyDiscount(20)">20%</button>
-    </div>
-    <button class="discount-clear-btn" onclick="playClick(); removeDiscount()">🧹 ล้างส่วนลด</button>
   </div>
 
   <div class="popup" id="authPopup">
     <h3>กรอกรหัสยืนยัน</h3>
     <input id="pinInput" type="password" maxlength="6" readonly>
     <div class="keypad">
-      <button onclick="playClick(); appendPin('1')">1</button>
-      <button onclick="playClick(); appendPin('2')">2</button>
-      <button onclick="playClick(); appendPin('3')">3</button>
-      <button onclick="playClick(); appendPin('4')">4</button>
-      <button onclick="playClick(); appendPin('5')">5</button>
-      <button onclick="playClick(); appendPin('6')">6</button>
-      <button onclick="playClick(); appendPin('7')">7</button>
-      <button onclick="playClick(); appendPin('8')">8</button>
-      <button onclick="playClick(); appendPin('9')">9</button>
-      <button onclick="playClick(); clearPin()">C</button>
-      <button onclick="playClick(); appendPin('0')">0</button>
-      <button onclick="playClick(); submitPin()">✅</button>
+      <button onclick="appendPin('1')">1</button>
+      <button onclick="appendPin('2')">2</button>
+      <button onclick="appendPin('3')">3</button>
+      <button onclick="appendPin('4')">4</button>
+      <button onclick="appendPin('5')">5</button>
+      <button onclick="appendPin('6')">6</button>
+      <button onclick="appendPin('7')">7</button>
+      <button onclick="appendPin('8')">8</button>
+      <button onclick="appendPin('9')">9</button>
+      <button onclick="clearPin()">C</button>
+      <button onclick="appendPin('0')">0</button>
+      <button onclick="submitPin()">✅</button>
     </div>
-  </div>
-
-  <div class="popup" id="cashPopup">
-    <h3>ชำระด้วยเงินสด</h3>
-    <p>ยอดที่ต้องชำระ: <strong><span id="cashAmount"></span> ฿</strong></p>
-    <input type="text" id="cashInput" placeholder="จำนวนเงินที่ลูกค้าชำระ" />
-    <div class="keypad">
-      <button onclick="playClick(); appendCash('1')">1</button>
-      <button onclick="playClick(); appendCash('2')">2</button>
-      <button onclick="playClick(); appendCash('3')">3</button>
-      <button onclick="playClick(); appendCash('4')">4</button>
-      <button onclick="playClick(); appendCash('5')">5</button>
-      <button onclick="playClick(); appendCash('6')">6</button>
-      <button onclick="playClick(); appendCash('7')">7</button>
-      <button onclick="playClick(); appendCash('8')">8</button>
-      <button onclick="playClick(); appendCash('9')">9</button>
-      <button onclick="playClick(); clearCash()">C</button>
-      <button onclick="playClick(); appendCash('0')">0</button>
-      <button onclick="playClick(); confirmCash()">✅</button>
-    </div>
-    <p id="changeDisplay" style="margin-top:8px;font-weight:600;"></p>
   </div>
 
   <div class="popup" id="qrPopup">
     <h3>สแกนเพื่อชำระเงิน</h3>
     <img id="qrImage" src="kshop.jpg" alt="QR Code">
-    <p>กรุณาชำระยอด <strong><span id="qrAmount"></span> ฿</strong></p>
-    <button onclick="playClick(); confirmQR()">✅ ชำระเงินเสร็จแล้ว</button>
-  </div>
-
-  <div class="popup" id="receiptPopup" style="width:360px;text-align:left;">
-    <div class="receipt-header">
-      <img src="logo.jpg" alt="โลโก้ร้านชายสี่บะหมี่เกี๊ยว" style="width:80px">
-      <h3 style="text-align:center;">ชายสี่บะหมี่เกี๊ยว กอล์ฟบ้านไผ่</h3>
-      <h5 style="text-align:center;">ที่อยู่ 95/7 ม.7 ต.ในเมือง อ.บ้านไผ่ จ.ขอนแก่น 40110</h5>
-      <h5 style="text-align:center;">เลขที่ผู้เสียภาษี:1409700103387</h5>
-      <h5 style="text-align:center;">โทร.082-3804188</h5>
-    </div>
-    <h4 style="text-align:center;">ใบกำกับภาษีอย่างย่อ/🧾 ใบเสร็จรับเงิน</h4>
-    <div id="receiptDetails"></div>
-    <h5 style="text-align:center;">ขอขอบพระคุณลูกค้าที่มาอุดหนุน</h5>
-    <button onclick="playClick(); window.print()">🖨️ พิมพ์ใบเสร็จ</button>
-    <button onclick="playClick(); closeReceipt()">กลับหน้าแรก</button>
+    <p>ยอดที่ต้องชำระ: <strong><span id="qrAmount"></span> ฿</strong></p>
+    <button onclick="confirmQR()">✅ ชำระแล้ว</button>
   </div>
 
   <button class="cart-button" id="cartBtn" onclick="openCart()">🛒 <span id="cartCount">0</span></button>
 
-  <!-- Supabase + Main script -->
   <script type="module">
-    // ------------------ IMPORTANT ------------------
-    // ใส่ค่า Supabase ของคุณที่นี่ (ANON key)
-    const SUPABASE_URL = 'https://your-project.supabase.co'   // <-- แก้เป็น URL ของคุณ
-    const SUPABASE_KEY = 'your-anon-key'                     // <-- แก้เป็น ANON key ของคุณ
-    // -----------------------------------------------
+    const SUPABASE_URL = "https://pujxykbpxsncbrlquaxo.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1anh5a2JweHNuY2JybHF1YXhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3OTI0OTIsImV4cCI6MjA3ODM2ODQ5Mn0.JxavkquEZo0W7NME4CJ01GbLKR0_gYFdcKy2BWCrAso";
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+    let order = {};
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
-
-    /* ================== App state ================== */
-    let order = {}; // { itemId: { id, name, price, quantity } }
-    let discountPercent = 0;
-
-    // อ่านตะกร้าจาก localStorage (ถ้ามี)
-    function loadCartFromStorage() {
-      try {
-        const raw = localStorage.getItem('cart')
-        if (raw) order = JSON.parse(raw)
-        else order = {}
-      } catch (e) { order = {} }
-      updateCartUI()
-    }
-    function saveCartToStorage() {
-      localStorage.setItem('cart', JSON.stringify(order))
-      updateCartUI()
-    }
-
-    /* ============ Menu Loading (Supabase) ============ */
-    const menuGrid = document.getElementById('menuGrid')
     async function loadMenu() {
-      menuGrid.innerHTML = 'กำลังโหลดเมนู...'
-      try {
-        const { data, error } = await supabase
-          .from('menu')
-          .select('id,name,price,category,image,available')
-          .eq('available', true)
-          .order('id', { ascending: true })
-
-        if (error) throw error
-        if (!data || data.length === 0) {
-          menuGrid.innerHTML = '<p>ยังไม่มีเมนู</p>'
-          return
-        }
-
-        menuGrid.innerHTML = data.map(item => {
-          const img = item.image && item.image.trim() !== '' ? item.image : 'kshop.jpg'
-          return `
-            <div class="menu-item" data-id="${item.id}" onclick="addToCart(${item.id}, '${escapeHtml(item.name)}', ${item.price})">
-              <div class="image-placeholder"><img src="${img}" alt="${escapeHtml(item.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" onerror="this.src='kshop.jpg'"></div>
-              <div class="menu-info">
-                <h3 style="margin:6px 0 4px">${escapeHtml(item.name)}</h3>
-                <p style="margin:0 0 6px">${escapeHtml(item.category || '')}</p>
-                <strong>${item.price} บาท</strong>
-              </div>
-            </div>
-          `
-        }).join('')
-      } catch (err) {
-        console.error('loadMenu error', err)
-        menuGrid.innerHTML = '<p style="color:red;">เกิดข้อผิดพลาดในการโหลดเมนู</p>'
+      const menuGrid = document.getElementById("menuGrid");
+      menuGrid.innerHTML = "⏳ กำลังโหลด...";
+      const { data, error } = await supabase.from("menu").select("*");
+      if (error) {
+        console.error(error);
+        menuGrid.innerHTML = `<p style="color:red;">เกิดข้อผิดพลาดในการโหลดเมนู</p>`;
+        return;
       }
-    }
-
-    // small helper to avoid XSS since we inject names in onclick above
-    function escapeHtml(str) {
-      if (!str) return ''
-      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')
-    }
-
-    /* ============ Cart functions ============ */
-    window.addToCart = function(id, name, price) {
-      const key = String(id)
-      if (!order[key]) order[key] = { id, name, price, quantity: 0 }
-      order[key].quantity += 1
-      saveCartToStorage()
-      openCart()
-    }
-
-    function updateCartUI() {
-      const orderItemsEl = document.getElementById('orderItems')
-      const totalSummaryEl = document.getElementById('totalSummary')
-      const cartCountEl = document.getElementById('cartCount')
-      const orderInfoEl = document.getElementById('orderInfo')
-
-      const items = Object.values(order)
-      if (items.length === 0) {
-        orderItemsEl.innerHTML = '<p style="text-align:center;color:#666">ยังไม่มีสินค้าในตะกร้า</p>'
-        totalSummaryEl.innerText = ''
-        cartCountEl.innerText = '0'
-        document.getElementById('orderSummary').style.display = 'none'
-        return
-      }
-
-      document.getElementById('orderSummary').style.display = 'block'
-      cartCountEl.innerText = items.reduce((s,i) => s + i.quantity, 0)
-
-      orderItemsEl.innerHTML = items.map(it => `
-        <div class="order-item">
-          <div style="flex:1">
-            <div style="font-weight:700">${it.name}</div>
-            <div style="color:#555">${it.price} ฿ x ${it.quantity}</div>
-          </div>
-          <div class="controls" style="display:flex;flex-direction:column;gap:6px">
-            <button onclick="decreaseQty(${it.id})">-</button>
-            <button onclick="increaseQty(${it.id})">+</button>
-            <button onclick="removeItem(${it.id})" style="background:#FF4D4D;width:36px;height:28px;border-radius:6px;margin-top:6px">🗑</button>
-          </div>
+      menuGrid.innerHTML = data.map(item => `
+        <div class="menu-item" onclick="addToCart(${item.id}, '${item.name}', ${item.price})">
+          <div class="image-placeholder">${item.image ? `<img src="${item.image}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">` : "ไม่มีรูป"}</div>
+          <h4>${item.name}</h4>
+          <p>${item.price} ฿</p>
         </div>
-      `).join('')
-
-      const subtotal = items.reduce((s,i)=> s + i.price * i.quantity, 0)
-      const discount = Math.round(subtotal * (discountPercent/100))
-      const total = subtotal - discount
-
-      totalSummaryEl.innerHTML = `ยอดรวม (รวมภาษี): <strong>${total} ฿</strong><br>ส่วนลด: ${discountPercent}% (${discount} ฿)`
-
-      // orderInfo (like people_count, table number) -- keep from localStorage if exists
-      const orderType = localStorage.getItem('orderType') || 'ทานที่ร้าน'
-      const customerCount = localStorage.getItem('customerCount') || '1'
-      const tableNumber = localStorage.getItem('tableNumber') || '-'
-      orderInfoEl.innerText = `${orderType} | 👥 ${customerCount} คน | 🪑 โต๊ะ: ${tableNumber}`
+      `).join("");
     }
 
-    window.increaseQty = function(id) {
-      const k = String(id)
-      if (order[k]) { order[k].quantity += 1; saveCartToStorage() }
-    }
-    window.decreaseQty = function(id) {
-      const k = String(id)
-      if (order[k]) {
-        order[k].quantity -= 1
-        if (order[k].quantity <= 0) delete order[k]
-        saveCartToStorage()
-      }
-    }
-    window.removeItem = function(id) {
-      const k = String(id)
-      if (order[k]) { delete order[k]; saveCartToStorage() }
+    window.addToCart = function(id, name, price) {
+      if (!order[id]) order[id] = { name, price, qty: 0 };
+      order[id].qty++;
+      updateCart();
+    };
+
+    function updateCart() {
+      const total = Object.values(order).reduce((s, i) => s + i.price * i.qty, 0);
+      document.getElementById("cartCount").innerText = Object.values(order).reduce((s, i) => s + i.qty, 0);
+      document.getElementById("orderItems").innerHTML = Object.entries(order)
+        .map(([id, it]) => `<div>${it.name} x${it.qty} = ${it.price * it.qty}฿</div>`)
+        .join("");
+      document.getElementById("totalSummary").innerHTML = `<strong>รวม: ${total} ฿</strong>`;
     }
 
-    function openCart() {
-      document.getElementById('orderSummary').style.display = 'block'
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    }
-    function closeCart() {
-      document.getElementById('orderSummary').style.display = 'none'
-    }
+    function openCart(){ document.getElementById("orderSummary").style.display = "block"; }
+    function closeCart(){ document.getElementById("orderSummary").style.display = "none"; }
+    function goHome(){ window.location.href="index.html"; }
+    function goBack(){ window.history.back(); }
 
-    /* ============ Discount / PIN (UX) ============ */
-    function promptDiscountAuth() {
-      showPopup('authPopup')
-    }
-    function appendPin(d) {
-      const el = document.getElementById('pinInput')
-      el.value = (el.value + d).slice(0,6)
-    }
-    function clearPin(){ document.getElementById('pinInput').value = '' }
-    function submitPin() {
-      const val = document.getElementById('pinInput').value
-      closeAllPopups()
-      if (val === '1234') { // ตัวอย่างรหัส (คุณเปลี่ยนได้)
-        showPopup('discountPopup')
-      } else {
-        alert('รหัสไม่ถูกต้อง')
-      }
-      document.getElementById('pinInput').value = ''
-    }
-    function applyDiscount(percent) {
-      discountPercent = percent
-      saveCartToStorage()
-      closeAllPopups()
-      updateCartUI()
-    }
-    function removeDiscount() {
-      discountPercent = 0
-      saveCartToStorage()
-      updateCartUI()
-    }
-
-    /* ============ Cash keypad ============ */
-    function appendCash(d) {
-      const el = document.getElementById('cashInput')
-      el.value = (el.value + d).replace(/^0+/, '') // no leading zeros
-    }
-    function clearCash(){ document.getElementById('cashInput').value = '' }
-    function payCash() {
-      // open cash popup and set amount
-      const subtotal = Object.values(order).reduce((s,i)=> s + i.price*i.quantity, 0)
-      const discount = Math.round(subtotal * (discountPercent/100))
-      const total = subtotal - discount
-      document.getElementById('cashAmount').innerText = total
-      showPopup('cashPopup')
-    }
-    function confirmCash() {
-      const paid = Number(document.getElementById('cashInput').value || 0)
-      const subtotal = Object.values(order).reduce((s,i)=> s + i.price*i.quantity, 0)
-      const discount = Math.round(subtotal * (discountPercent/100))
-      const total = subtotal - discount
-      if (paid < total) { alert('จำนวนเงินจ่ายยังไม่พอ'); return }
-      const change = paid - total
-      document.getElementById('changeDisplay').innerText = `เงินทอน ${change} ฿`
-      // บันทึกใบเสร็จเป็นประเภท 'cash'
-      closeAllPopups()
-      submitOrder('cash')
-    }
-
-    /* ============ QR flow ============ */
-    function payQR() {
-      const subtotal = Object.values(order).reduce((s,i)=> s + i.price*i.quantity, 0)
-      const discount = Math.round(subtotal * (discountPercent/100))
-      const total = subtotal - discount
-      document.getElementById('qrAmount').innerText = total
-      // หากต้องการ generate QR แบบไดนามิก ให้ใส่ src ของรูปที่ต้องการที่นี่
-      // document.getElementById('qrImage').src = someGeneratedQRUrl
-      showPopup('qrPopup')
-    }
-    function confirmQR() {
-      // user confirms payment by scanning QR
-      closeAllPopups()
-      submitOrder('qr')
-    }
-
-    /* ============ Receipt / Saving to Supabase ============ */
-    async function submitOrder(paymentType = 'cash') {
-      // paymentType: 'cash' or 'qr'
-      const items = Object.values(order)
-      if (items.length === 0) { alert('ยังไม่มีสินค้าในตะกร้า'); return }
-
-      // Prepare receipt data
-      const orderType = localStorage.getItem('orderType') || 'ทานที่ร้าน'
-      const peopleCount = parseInt(localStorage.getItem('customerCount') || '1')
-      const tableNumber = localStorage.getItem('tableNumber') || '-'
-
-      const subtotal = items.reduce((s,i)=> s + i.price*i.quantity, 0)
-      const discount = Math.round(subtotal * (discountPercent/100))
-      const total = subtotal - discount
-
-      try {
-        // 1) insert receipt
-        const { data: receiptData, error: receiptError } = await supabase
-          .from('receipts')
-          .insert([{
-            store_name: 'ชายสี่บะหมี่เกี๊ยว กอล์ฟบ้านไผ่',
-            store_address: 'ที่อยู่จริงของร้าน',
-            store_tax_id: '1409700103387',
-            store_phone: '0823804188',
-            order_type: orderType,
-            people_count: peopleCount,
-            table_number: tableNumber,
-            subtotal: subtotal,
-            discount: discount,
-            service_charge: 0,
-            tax: Math.round(subtotal * 0.07),
-            grand_total: total,
-            payment: paymentType
-          }])
-          .select()
-          .single()
-
-        if (receiptError) {
-          console.error('receiptError', receiptError)
-          alert('บันทึกใบเสร็จผิดพลาด')
-          return
-        }
-
-        const receiptId = receiptData.id
-
-        // 2) insert receipt_items
-        const itemsToInsert = items.map(it => ({
-          receipt_id: receiptId,
-          item_name: it.name,
-          qty: it.quantity,
-          price: it.price,
-          total_price: it.price * it.quantity
-        }))
-
-        const { error: itemsError } = await supabase
-          .from('receipt_items')
-          .insert(itemsToInsert)
-
-        if (itemsError) {
-          console.error('itemsError', itemsError)
-          alert('บันทึกรายการสินค้าไม่สำเร็จ')
-          return
-        }
-
-        // success: clear cart and show receipt popup
-        localStorage.removeItem('cart')
-        order = {}
-        discountPercent = 0
-        updateCartUI()
-
-        // prepare receipt details
-        const receiptHtml = `
-          <h2>ใบเสร็จ #${receiptId}</h2>
-          <div><strong>ยอดรวม:</strong> ${total} ฿</div>
-          <table class="receipt-table">
-            <thead><tr><th>สินค้า</th><th>จำนวน</th><th>ราคา</th></tr></thead>
-            <tbody>
-              ${itemsToInsert.map(i => `<tr><td>${escapeHtml(i.item_name)}</td><td>${i.qty}</td><td>${i.total_price} ฿</td></tr>`).join('')}
-            </tbody>
-          </table>
-        `
-        document.getElementById('receiptDetails').innerHTML = receiptHtml
-        showPopup('receiptPopup')
-        alert('บันทึกใบเสร็จเรียบร้อย')
-      } catch (err) {
-        console.error('submitOrder err', err)
-        alert('เกิดข้อผิดพลาดในการบันทึก')
-      }
-    }
-
-    function closeReceipt() {
-      closeAllPopups()
-      // you may navigate back or reset UI as needed
-    }
-
-    /* ============ Popup utility ============ */
-    function showPopup(id) {
-      document.getElementById('overlay').style.display = 'block'
-      document.getElementById(id).style.display = 'block'
-    }
-    function closeAllPopups() {
-      document.getElementById('overlay').style.display = 'none'
-      const popups = document.querySelectorAll('.popup')
-      popups.forEach(p => p.style.display = 'none')
-      // clear keypad inputs
-      document.getElementById('cashInput') && (document.getElementById('cashInput').value = '')
-      document.getElementById('changeDisplay') && (document.getElementById('changeDisplay').innerText = '')
-      document.getElementById('pinInput') && (document.getElementById('pinInput').value = '')
-    }
-
-    /* ============ Navigation & sounds (placeholders) ============ */
-    function playClick() { /* optional click sound */ }
-    function goHome(){ /* implement if needed */ }
-    function goBack(){ window.history.back() }
-
-    /* ============ Init ============ */
-    loadCartFromStorage()
-    loadMenu()
-
-    // expose some functions globally (already used by inline onclick)
-    window.payCash = payCash
-    window.payQR = payQR
-    window.confirmQR = confirmQR
-    window.openCart = openCart
-    window.closeCart = closeCart
-    window.removeDiscount = removeDiscount
-    window.promptDiscountAuth = promptDiscountAuth
-    window.applyDiscount = applyDiscount
-    window.appendPin = appendPin
-    window.submitPin = submitPin
-    window.clearPin = clearPin
-    window.appendCash = appendCash
-    window.clearCash = clearCash
-    window.confirmCash = confirmCash
-    window.submitOrder = submitOrder
-
+    loadMenu();
   </script>
 </body>
 </html>
