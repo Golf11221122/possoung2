@@ -731,7 +731,7 @@
         function loadOrderInfo() {
             const orderType = localStorage.getItem("orderType") || "-";
             const customerCount = localStorage.getItem("customerCount") || "-";
-            const tableNumber = localStorage.getItem("tableNumber") || "N/A"; // ✅ ใช้ 'N/A' แทนค่าว่าง
+            const tableNumber = localStorage.getItem("tableNumber") || "N/A"; 
             const text = `🍽️ ${orderType} | 👥 ${customerCount} คน | 🪑 โต๊ะ ${tableNumber}`;
             const el = document.getElementById("orderInfo");
             if (el) el.innerHTML = text;
@@ -746,7 +746,7 @@
         function addToOrder(item) {
             const n = item.name,
                 p = Number(item.price);
-            if (!menuMap[n]) return alert(`ไม่พบ ID เมนูสำหรับ ${n}`); // ป้องกัน error
+            if (!menuMap[n]) return alert(`ไม่พบ ID เมนูสำหรับ ${n}`); 
             if (!order[n]) order[n] = {
                 price: p,
                 quantity: 1,
@@ -773,7 +773,6 @@
         }
 
         function calcTaxFromIncluded(totalWithVat) {
-            // ป้องกันค่าที่ไม่ใช่ตัวเลข
             totalWithVat = Number(totalWithVat) || 0; 
             const beforeVat = totalWithVat / 1.07;
             const vatAmount = totalWithVat - beforeVat;
@@ -824,7 +823,6 @@
         function getTotal() {
             let subtotal = Object.values(order).reduce((s, i) => s + i.price * i.quantity, 0);
             const discount = subtotal * (discountPercent / 100);
-            // 🛑 ป้องกันค่าติดลบที่นี่
             return Math.max(0, subtotal - discount); 
         }
 
@@ -914,17 +912,15 @@
             document.getElementById('changeDisplay').innerText = '';
         }
 
-        // 🚀 ฟังก์ชันบันทึกข้อมูล (แก้ไข table_number, total_amount, และ order_type)
+        // 🚀 ฟังก์ชันบันทึกข้อมูล (แก้ไข order_type, table_number, total_amount อย่างรัดกุม)
         async function saveOrderToSupabase(method) {
             // 1. คำนวณค่าทั้งหมด
             const subtotal = Object.values(order).reduce((s, i) => s + i.price * i.quantity, 0);
             const discount = subtotal * (discountPercent / 100);
             
-            // 🛑 ตรวจสอบและทำให้แน่ใจว่า total_amount ไม่เป็นค่าว่างหรือติดลบ
             const total = Math.max(0, subtotal - discount); 
             
             if (total <= 0) {
-                // ป้องกันการส่งค่า 0 หรือติดลบไปยัง NOT NULL column
                 throw new Error("Invalid total amount (<= 0). Cannot save order."); 
             }
             
@@ -933,16 +929,16 @@
                 vatAmount
             } = calcTaxFromIncluded(total); 
 
-            // 🛑 แก้ไข: ใช้ 'N/A' แทน null สำหรับ table_number หากไม่พบใน localStorage
+            // 🛑 การป้องกันค่า NULL สำหรับ NOT NULL Columns 🛑
             const tableNumber = localStorage.getItem("tableNumber") || 'N/A'; 
-            const orderType = localStorage.getItem("orderType") || 'Takeaway'; // ใช้ 'Takeaway' เป็นค่าเริ่มต้นหากไม่พบ
-            const customerCount = parseInt(localStorage.getItem("customerCount") || '1') || 1; // ใช้ 1 เป็นค่าเริ่มต้น
+            const orderType = localStorage.getItem("orderType") || 'Takeaway'; 
+            const customerCount = parseInt(localStorage.getItem("customerCount")) || 1; 
 
             // 2.1. บันทึกเข้าตาราง receipts ก่อน 
             const receiptData = {
                 table_number: tableNumber,
-                order_type: orderType, 
-                customer_count: customerCount,
+                order_type: orderType, // ✅ มั่นใจว่ามีค่าเป็น 'Takeaway' หากไม่มี
+                customer_count: customerCount, // ✅ มั่นใจว่ามีค่าเป็น 1 หากไม่มี
                 discount_percent: discountPercent,
                 subtotal: subtotal,
                 discount_amount: discount,
@@ -1008,7 +1004,7 @@
                 setTimeout(() => showReceipt('เงินสด', paid, change), 800);
             } catch (err) {
                 console.error("Supabase INSERT Error:", err);
-                alert(`❌ บันทึกคำสั่งซื้อไม่สำเร็จ! (Error: ${err.message}).`); 
+                alert(`❌ บันทึกคำสั่งซื้อไม่สำเร็จ! (Error: ${err.message}). กรุณาตรวจสอบ Console (F12)`); 
                 document.getElementById('changeDisplay').innerText = `บันทึกไม่สำเร็จ`;
             }
         }
@@ -1019,7 +1015,7 @@
                 showReceipt('QR Code', getTotal(), 0);
             } catch (err) {
                 console.error("Supabase INSERT Error:", err);
-                alert(`❌ บันทึกคำสั่งซื้อไม่สำเร็จ! (Error: ${err.message}).`);
+                alert(`❌ บันทึกคำสั่งซื้อไม่สำเร็จ! (Error: ${err.message}). กรุณาตรวจสอบ Console (F12)`);
             }
         }
 
