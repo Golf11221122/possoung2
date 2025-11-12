@@ -281,12 +281,32 @@
         }
 
         #qrPopup img {
-            /* 1. ✅ แก้ไข: ปรับขนาด QR Code */
             display: block;
             margin: 10px auto;
-            max-width: 75%; /* 3/4 ของหน้าจอ */
+            max-width: 75%;
             height: auto;
         }
+
+        /* 1. ✅ เพิ่ม CSS สำหรับปุ่มชำระเงินสำเร็จ */
+        #qrPopup button {
+            background: linear-gradient(90deg, #4CAF50, #45A049) !important;
+            color: white !important;
+            font-weight: 700 !important;
+            border: none !important;
+            border-radius: 12px !important;
+            padding: 10px 0 !important;
+            font-size: 1rem !important;
+            cursor: pointer !important;
+            transition: transform .15s ease, background .2s !important;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            margin-top: 15px;
+        }
+        #qrPopup button:hover {
+            transform: scale(1.05);
+            background: linear-gradient(90deg, #45A049, #388E3C) !important;
+        }
+
 
         #receiptPopup {
             width: 320px !important;
@@ -312,7 +332,6 @@
         }
 
         #receiptPopup .receipt-actions button {
-            /* 2. ✅ แก้ไข: จัดปุ่มให้อยู่บรรทัดเดียวกัน */
             flex: 1;
             display: inline-block;
             border-radius: 10px;
@@ -321,7 +340,7 @@
             border: none;
             cursor: pointer;
             transition: transform 0.2s ease;
-            margin: 0; /* ล้าง margin เดิม */
+            margin: 0;
         }
 
         #receiptPopup .receipt-actions button:first-of-type {
@@ -537,7 +556,7 @@
         <h3>สแกนเพื่อชำระเงิน</h3>
         <img id="qrImage" src="kshop.jpg" alt="QR Code">
         <p>กรุณาชำระยอด <strong><span id="qrAmount"></span> ฿</strong></p>
-        <button onclick="playClick(); confirmQR()">✅ ชำระเงินเสร็จแล้ว</button>
+        <button onclick="playClick(); confirmQR()">✅ ชำระเงินสำเร็จ</button>
     </div>
 
     <div class="popup" id="paymentPopup">
@@ -594,8 +613,8 @@
                     .order("id", { ascending: true });
 
                 if (error) {
-                    console.error("Supabase Error:", error.message);
-                    menuGrid.innerHTML = `<p style='color:red;text-align:center;'>❌ ผิดพลาด: ${error.message} (ตรวจสอบ RLS Policy)</p>`;
+                    console.error("Supabase Error (Menu):", error.message);
+                    menuGrid.innerHTML = `<p style='color:red;text-align:center;'>❌ ผิดพลาด: ${error.message} (ตรวจสอบ RLS Policy ตาราง menu)</p>`;
                     return;
                 }
 
@@ -626,9 +645,6 @@
         
         // ------------------ Navigation / Sound / Popups (Code Omitted for Brevity - No Changes) ----------------
 
-        // ... [ฟังก์ชัน goHome, goBack, playClick, showPopup, closeAllPopups, ฯลฯ] ...
-        
-        // ------------------ Navigation / Sound ----------------
         function goHome() { window.location.href = 'index.html'; }
         function goBack() { window.history.back(); }
 
@@ -713,7 +729,8 @@
 
         function addToOrder(item) {
             const n = item.name, p = Number(item.price);
-            if (!order[n]) order[n] = { price: p, quantity: 1, menu_id: menuMap[n].id }; // เพิ่ม menu_id
+            if (!menuMap[n]) return alert(`ไม่พบ ID เมนูสำหรับ ${n}`); // ป้องกัน error
+            if (!order[n]) order[n] = { price: p, quantity: 1, menu_id: menuMap[n].id };
             else order[n].quantity++;
             updateSummary();
             updateCartCount();
@@ -853,7 +870,7 @@
             document.getElementById('changeDisplay').innerText = '';
         }
 
-        // 3. ✅ เพิ่มฟังก์ชันบันทึกข้อมูล
+        // 2. ✅ ปรับปรุงฟังก์ชันบันทึกข้อมูล
         async function saveOrderToSupabase(method) {
             const subtotal = Object.values(order).reduce((s, i) => s + i.price * i.quantity, 0);
             const discount = subtotal * (discountPercent / 100);
@@ -864,7 +881,7 @@
             const orderType = localStorage.getItem("orderType") || null;
             const customerCount = parseInt(localStorage.getItem("customerCount")) || null;
 
-            // 3.1. บันทึกเข้าตาราง receipts ก่อน
+            // 2.1. บันทึกเข้าตาราง receipts ก่อน (ต้องมี RLS Policy สำหรับ SELECT ด้วย)
             const receiptData = {
                 table_number: tableNumber,
                 order_type: orderType,
@@ -881,12 +898,12 @@
             const { data: receipt, error: receiptError } = await supabase
                 .from('receipts')
                 .insert([receiptData])
-                .select()
+                .select('id') // ดึง ID กลับมาเท่านั้น
                 .single();
 
             if (receiptError) throw receiptError;
             
-            // 3.2. บันทึกเข้าตาราง receipt_items
+            // 2.2. บันทึกเข้าตาราง receipt_items
             const receiptId = receipt.id;
             const itemsToInsert = Object.keys(order).map(itemName => {
                 const item = order[itemName];
@@ -910,7 +927,6 @@
         }
 
 
-        // 3. ✅ แก้ไข: นำ Comment ออกเพื่อเรียกใช้ saveOrderToSupabase()
         async function confirmCash() {
             const paid = Number(document.getElementById('cashInput').value || 0);
             const t = getTotal();
@@ -923,18 +939,18 @@
                 setTimeout(() => showReceipt('เงินสด', paid, change), 800);
             } catch (err) {
                 console.error("Supabase INSERT Error:", err);
-                alert(`❌ บันทึกคำสั่งซื้อไม่สำเร็จ! (${err.message})`);
+                alert(`❌ บันทึกคำสั่งซื้อไม่สำเร็จ! (${err.message}). กรุณาตรวจสอบ RLS Policy ทั้ง INSERT และ SELECT ในตาราง receipts.`);
+                document.getElementById('changeDisplay').innerText = `บันทึกไม่สำเร็จ`;
             }
         }
 
-        // 3. ✅ แก้ไข: นำ Comment ออกเพื่อเรียกใช้ saveOrderToSupabase()
         async function confirmQR() {
             try {
                 await saveOrderToSupabase('QR Code');
                 showReceipt('QR Code', getTotal(), 0);
             } catch (err) {
                 console.error("Supabase INSERT Error:", err);
-                alert(`❌ บันทึกคำสั่งซื้อไม่สำเร็จ! (${err.message})`);
+                alert(`❌ บันทึกคำสั่งซื้อไม่สำเร็จ! (${err.message}). กรุณาตรวจสอบ RLS Policy ทั้ง INSERT และ SELECT ในตาราง receipts.`);
             }
         }
         
