@@ -893,7 +893,6 @@
             showPopup('qrPopup');
         }
 
-        // ✅ ลบ Supabase Direct Insert ออก
         function confirmCash() {
             const paid = Number(document.getElementById('cashInput').value);
             const t = getTotal();
@@ -907,18 +906,16 @@
             }
             const change = paid - t;
             document.getElementById('changeDisplay').innerText = `เงินทอน: ${change.toFixed(2)} ฿`;
-            // ใช้ showReceipt ในการส่ง Webhook และแสดงใบเสร็จ
             setTimeout(() => showReceipt('เงินสด', paid, change), 800);
         }
 
-        // ✅ ลบ Supabase Direct Insert ออก
         function confirmQR() {
-            // ใช้ showReceipt ในการส่ง Webhook และแสดงใบเสร็จ
             showReceipt('QR Code', 0, 0);
         }
 
         // ---------------- ใบเสร็จ ----------------
         async function showReceipt(method, paid, change) {
+            // ✅ Fix: ใช้ 'people_count' ตรงนี้
             const orderType = localStorage.getItem("orderType") || "-";
             const peopleCount = localStorage.getItem("customerCount") || "-"; 
             const tableNumber = localStorage.getItem("tableNumber") || "-";
@@ -989,7 +986,8 @@
                 payment_method: method,
                 total: net,
                 discount: currentDiscountPercent,
-                people_count: peopleCount, // Correct column name for Webhook payload
+                // ✅ แก้ไข: ใช้ people_count ที่ตรงกับ Supabase 
+                people_count: peopleCount, 
                 table_number: tableNumber,
                 items: Object.keys(currentOrder).map(name => ({
                     name: name,
@@ -1026,7 +1024,6 @@
         function closeReceipt() { closeAllPopups(); }
 
         // ---------------- หน้าเมนู ----------------
-        // ✅ ปุ่ม Home/Back ที่ไม่ทำงาน จะกลับมาใช้งานได้เมื่อ JS ส่วนอื่นเสถียร
         function goHome() { 
             const currentUrl = window.location.href;
             const baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/') + 1);
@@ -1040,47 +1037,64 @@
         async function fetchMenuFromSupabase() {
             const menuGrid = document.getElementById('menuGrid');
             if (!supabase) {
-                menuGrid.innerHTML = '<span style="color: red; font-weight: bold;">❌ ไม่สามารถเชื่อมต่อ Supabase ได้ (Client ไม่ถูกสร้าง หรือเกิดข้อผิดพลาดในการเชื่อมต่อ)</span>';
-                return;
-            }
-
-            // ⭐ ยืนยันว่าใช้ชื่อตาราง 'menu' (ตัวพิมพ์เล็ก)
-            const { data, error } = await supabase
-                .from('menu') 
-                .select('*'); 
-
-            if (error) {
-                console.error("Error fetching menu:", error);
-                // แสดงข้อความแจ้งเตือนที่เป็นประโยชน์
-                menuGrid.innerHTML = `<span style="color: red; font-weight: bold;">⚠️ เกิดข้อผิดพลาดในการโหลดเมนู: 
-                    กรุณาตรวจสอบชื่อตาราง (ปัจจุบันใช้ 'menu') และ **สิทธิ์ RLS**</span><br>Error: ${error.message}`;
+                menuGrid.innerHTML = '<span style="color: red; font-weight: bold;">❌ ไม่สามารถเชื่อมต่อ Supabase ได้ (Client ไม่ถูกสร้าง)</span>';
                 return;
             }
             
-            // ✅ Fix for "Cannot set properties of undefined" error
-            if (!data || data.length === 0) {
-                 menuGrid.innerHTML = '<span style="color: orange; font-weight: bold;">✅ เชื่อมต่อสำเร็จ แต่ไม่พบรายการในตาราง 'menu' (อาจติด **RLS** หรือไม่มีข้อมูล)</span>';
-                 return;
-            }
+            menuGrid.innerHTML = 'กำลังโหลดเมนู...'; // แสดงสถานะโหลดใหม่
 
-            // ถ้ามาถึงตรงนี้ แสดงว่าดึงข้อมูลได้สำเร็จ
-            menuGrid.innerHTML = '';
-            data.forEach(it => {
-                // ⭐ Stronger check: ต้องมี name และ price ไม่เป็น undefined/null 
-                if (it && it.name && it.price !== undefined && it.price !== null) { 
-                    const d = document.createElement('div');
-                    d.className = 'menu-item';
-                    d.innerHTML = `
-                      <div class='image-placeholder'>${it.image ? `<img src="${it.image}" alt="${it.name}">` : '[Image placeholder]'}</div>
-                      <div>${it.name}</div>
-                      <div>${Number(it.price).toFixed(2)} บาท</div>`;
-                    d.onclick = () => { playClick(); addToOrder(it); };
-                    menuGrid.appendChild(d);
-                } else {
-                    console.warn("Skipping invalid menu item:", it);
+            try {
+                // ⭐ ยืนยันว่าใช้ชื่อตาราง 'menu' (ตัวพิมพ์เล็ก)
+                const { data, error } = await supabase
+                    .from('menu') 
+                    .select('*'); 
+
+                if (error) {
+                    console.error("Error fetching menu:", error);
+                    // ⚠️ ให้ข้อความเตือนเรื่อง RLS ชัดเจน
+                    menuGrid.innerHTML = `<span style="color: red; font-weight: bold;">⚠️ เกิดข้อผิดพลาดในการโหลดเมนู: 
+                        1. ตรวจสอบชื่อตาราง (ปัจจุบันใช้ 'menu') <br>
+                        2. ตรวจสอบ **สิทธิ์ RLS** (Allow_public_read_menu)</span><br>Error: ${error.message}`;
+                    return;
                 }
-            });
-            console.log(`Menu loaded successfully. Found ${data.length} items. Processed ${menuGrid.children.length} valid items.`);
+                
+                // ✅ ตรวจสอบข้อมูลว่าง/ไม่สมบูรณ์
+                if (!data || data.length === 0) {
+                     menuGrid.innerHTML = '<span style="color: orange; font-weight: bold;">✅ เชื่อมต่อสำเร็จ แต่ไม่พบรายการในตาราง 'menu' (อาจติด RLS หรือไม่มีข้อมูล)</span>';
+                     return;
+                }
+
+                // ถ้ามาถึงตรงนี้ แสดงว่าดึงข้อมูลได้สำเร็จ
+                menuGrid.innerHTML = '';
+                let validItemCount = 0;
+                data.forEach(it => {
+                    // ⭐ Stronger check: ต้องมี name และ price ไม่เป็น undefined/null 
+                    if (it && it.name && it.price !== undefined && it.price !== null) { 
+                        const d = document.createElement('div');
+                        d.className = 'menu-item';
+                        d.innerHTML = `
+                          <div class='image-placeholder'>${it.image ? `<img src="${it.image}" alt="${it.name}">` : '[Image placeholder]'}</div>
+                          <div>${it.name}</div>
+                          <div>${Number(it.price).toFixed(2)} บาท</div>`;
+                        d.onclick = () => { playClick(); addToOrder(it); };
+                        menuGrid.appendChild(d);
+                        validItemCount++;
+                    } else {
+                        console.warn("Skipping invalid menu item (missing name or price):", it);
+                    }
+                });
+
+                if(validItemCount === 0 && data.length > 0) {
+                     menuGrid.innerHTML = '<span style="color: orange; font-weight: bold;">✅ พบรายการใน Supabase แต่ข้อมูลไม่สมบูรณ์ (ขาดชื่อหรือราคา)</span>';
+                }
+
+                console.log(`Menu loaded successfully. Found ${data.length} total items. Processed ${validItemCount} valid items.`);
+
+            } catch (err) {
+                 // จับข้อผิดพลาดที่เกิดจากการเชื่อมต่อ (Failed to fetch)
+                console.error("Critical error during menu fetch:", err);
+                menuGrid.innerHTML = `<span style="color: red; font-weight: bold;">❌ ข้อผิดพลาดในการเชื่อมต่อเครือข่าย: ตรวจสอบ URL/Key หรือการเชื่อมต่ออินเทอร์เน็ต</span>`;
+            }
         }
         
         // 🛒 แสดง popup ตะกร้า
