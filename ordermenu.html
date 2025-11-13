@@ -151,6 +151,13 @@
             color: #666;
             font-size: 0.95rem;
             margin-bottom: 10px;
+            overflow: hidden; /* เพิ่มเพื่อให้รูปภาพพอดี */
+        }
+
+        .image-placeholder img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .order-summary button {
@@ -459,27 +466,6 @@
         }
 
         /* 📱 ปรับ layout สำหรับมือถือ */
-        @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-            }
-
-            .order-summary {
-                position: sticky;
-                top: 0;
-                width: 100%;
-                z-index: 1000;
-                margin: 0 0 10px 0;
-                border-radius: 0 0 16px 16px;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            }
-
-            .menu-grid {
-                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            }
-        }
-
-        /* 📱 ปรับ layout สำหรับมือถือ (สองแถว) */
         @media (max-width: 768px) {
             .container {
                 flex-direction: column;
@@ -907,6 +893,7 @@
             showPopup('qrPopup');
         }
 
+        // ✅ ลบ Supabase Direct Insert ออก
         function confirmCash() {
             const paid = Number(document.getElementById('cashInput').value);
             const t = getTotal();
@@ -920,16 +907,18 @@
             }
             const change = paid - t;
             document.getElementById('changeDisplay').innerText = `เงินทอน: ${change.toFixed(2)} ฿`;
+            // ใช้ showReceipt ในการส่ง Webhook และแสดงใบเสร็จ
             setTimeout(() => showReceipt('เงินสด', paid, change), 800);
         }
 
+        // ✅ ลบ Supabase Direct Insert ออก
         function confirmQR() {
+            // ใช้ showReceipt ในการส่ง Webhook และแสดงใบเสร็จ
             showReceipt('QR Code', 0, 0);
         }
 
         // ---------------- ใบเสร็จ ----------------
-        function showReceipt(method, paid, change) {
-            // ⭐ แก้ไข: ดึง customerCount มาเก็บในตัวแปร peopleCount เพื่อให้สอดคล้องกับคอลัมน์ใน Supabase
+        async function showReceipt(method, paid, change) {
             const orderType = localStorage.getItem("orderType") || "-";
             const peopleCount = localStorage.getItem("customerCount") || "-"; 
             const tableNumber = localStorage.getItem("tableNumber") || "-";
@@ -1000,10 +989,8 @@
                 payment_method: method,
                 total: net,
                 discount: currentDiscountPercent,
-                // ⭐ แก้ไขตรงนี้: เพิ่ม people_count และ table_number
-                people_count: peopleCount, 
+                people_count: peopleCount, // Correct column name for Webhook payload
                 table_number: tableNumber,
-                // **
                 items: Object.keys(currentOrder).map(name => ({
                     name: name,
                     qty: currentOrder[name].quantity,
@@ -1012,7 +999,7 @@
             };
 
             // ✅ ส่งไปยัง n8n
-            sendOrderToWebhook(payload);
+            await sendOrderToWebhook(payload);
 
             // ✅ ค่อยล้างข้อมูลหลังส่งเรียบร้อย
             order = {};
@@ -1039,8 +1026,15 @@
         function closeReceipt() { closeAllPopups(); }
 
         // ---------------- หน้าเมนู ----------------
-        function goHome() { window.location.href = 'index.html'; }
-        function goBack() { window.history.back(); }
+        // ✅ ปุ่ม Home/Back ที่ไม่ทำงาน จะกลับมาใช้งานได้เมื่อ JS ส่วนอื่นเสถียร
+        function goHome() { 
+            const currentUrl = window.location.href;
+            const baseUrl = currentUrl.substring(0, currentUrl.lastIndexOf('/') + 1);
+            window.location.href = baseUrl + 'index.html'; 
+        }
+        function goBack() { 
+            window.history.back(); 
+        }
 
         // 🚀 ดึงเมนูจาก Supabase ตาราง 'menu'
         async function fetchMenuFromSupabase() {
@@ -1063,27 +1057,30 @@
                 return;
             }
             
-            if (data.length === 0) {
-                 menuGrid.innerHTML = '<span style="color: orange; font-weight: bold;">✅ เชื่อมต่อสำเร็จ ตารางถูก แต่ไม่พบรายการในตาราง 'menu' (อาจติด **RLS** หรือไม่มีข้อมูล)</span>';
+            // ✅ Fix for "Cannot set properties of undefined" error
+            if (!data || data.length === 0) {
+                 menuGrid.innerHTML = '<span style="color: orange; font-weight: bold;">✅ เชื่อมต่อสำเร็จ แต่ไม่พบรายการในตาราง 'menu' (อาจติด **RLS** หรือไม่มีข้อมูล)</span>';
                  return;
             }
 
             // ถ้ามาถึงตรงนี้ แสดงว่าดึงข้อมูลได้สำเร็จ
             menuGrid.innerHTML = '';
             data.forEach(it => {
-                const d = document.createElement('div');
-                d.className = 'menu-item';
-                // ตรวจสอบว่ามี price และ name ก่อนสร้างเมนู
-                if (it.name && it.price !== undefined) { 
+                // ⭐ Stronger check: ต้องมี name และ price ไม่เป็น undefined/null 
+                if (it && it.name && it.price !== undefined && it.price !== null) { 
+                    const d = document.createElement('div');
+                    d.className = 'menu-item';
                     d.innerHTML = `
-                  <div class='image-placeholder'></div>
-                  <div>${it.name}</div>
-                  <div>${Number(it.price).toFixed(2)} บาท</div>`; // แสดงราคาเป็นทศนิยม 2 ตำแหน่ง
+                      <div class='image-placeholder'>${it.image ? `<img src="${it.image}" alt="${it.name}">` : '[Image placeholder]'}</div>
+                      <div>${it.name}</div>
+                      <div>${Number(it.price).toFixed(2)} บาท</div>`;
                     d.onclick = () => { playClick(); addToOrder(it); };
                     menuGrid.appendChild(d);
+                } else {
+                    console.warn("Skipping invalid menu item:", it);
                 }
             });
-            console.log(`Menu loaded successfully. Found ${data.length} items.`);
+            console.log(`Menu loaded successfully. Found ${data.length} items. Processed ${menuGrid.children.length} valid items.`);
         }
         
         // 🛒 แสดง popup ตะกร้า
@@ -1108,7 +1105,6 @@
 
         // โหลดข้อมูลลูกค้า / โต๊ะ / ประเภทการสั่ง
         function loadOrderInfo() {
-            // ⭐ แก้ไข: ดึง customerCount มาเก็บในตัวแปร peopleCount เพื่อแสดงผล
             const orderType = localStorage.getItem("orderType") || "-";
             const peopleCount = localStorage.getItem("customerCount") || "-"; 
             const tableNumber = localStorage.getItem("tableNumber") || "-";
