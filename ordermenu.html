@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> 
     <style>
+        /* ... CSS เดิมทั้งหมด ... */
         :root {
             --orange: #FFA500;
             --orange-2: #FFB84D;
@@ -714,10 +715,10 @@
         };
         
         // ---------------- Supabase Setup ----------------
+        // 🚨 กรุณาตรวจสอบว่า URL และ Key ถูกต้องและสามารถใช้งานได้
         const SUPABASE_URL = "https://puyjxvkbpxsncrblquaxo.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1anh5a2JweHNuY2JybHF1YXhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3OTI0OTIsImV4cCI6MjA3ODM2ODQ5Mn0.JxavkquEZo0W7NME4CJ01GbLKR0_gYFdcKy2BWCrAso";
 
-        // ✅ แก้ไข: สร้าง client instance โดยตรงจาก window.supabase
         try {
             if (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function') {
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -1036,23 +1037,32 @@
 
         // 🚀 NEW: ดึงเมนูจาก Supabase ตาราง 'menu'
         async function fetchMenuFromSupabase() {
+            const menuGrid = document.getElementById('menuGrid');
             if (!supabase) {
-                document.getElementById('menuGrid').innerHTML = 'ไม่สามารถเชื่อมต่อ Supabase ได้ (Client ไม่ถูกสร้าง หรือเกิดข้อผิดพลาดในการเชื่อมต่อ)';
+                menuGrid.innerHTML = '<span style="color: red; font-weight: bold;">❌ ไม่สามารถเชื่อมต่อ Supabase ได้ (Client ไม่ถูกสร้าง หรือเกิดข้อผิดพลาดในการเชื่อมต่อ)</span>';
                 return;
             }
 
+            // ⭐ แก้ไข: ยืนยันว่าใช้ชื่อตาราง 'menu' (ตัวพิมพ์เล็ก)
             const { data, error } = await supabase
-                .from('menu')
-                .select('*'); // ดึงข้อมูลทั้งหมดจากตาราง 'menu'
+                .from('menu') 
+                .select('*'); 
 
             if (error) {
                 console.error("Error fetching menu:", error);
-                document.getElementById('menuGrid').innerHTML = 'เกิดข้อผิดพลาดในการโหลดเมนู: ' + error.message;
+                // แสดงข้อความแจ้งเตือนที่เป็นประโยชน์
+                menuGrid.innerHTML = `<span style="color: red; font-weight: bold;">⚠️ เกิดข้อผิดพลาดในการโหลดเมนู: 
+                    กรุณาตรวจสอบชื่อตาราง (ปัจจุบันใช้ 'menu') และ **สิทธิ์ RLS**</span><br>Error: ${error.message}`;
                 return;
             }
+            
+            if (data.length === 0) {
+                 menuGrid.innerHTML = '<span style="color: orange; font-weight: bold;">✅ เชื่อมต่อสำเร็จ **ตารางถูก** แต่ไม่พบรายการในตาราง 'menu' (อาจเพราะติด **RLS** หรือไม่มีข้อมูล)</span>';
+                 return;
+            }
 
-            const g = document.getElementById('menuGrid');
-            g.innerHTML = '';
+            // ถ้ามาถึงตรงนี้ แสดงว่าดึงข้อมูลได้สำเร็จ
+            menuGrid.innerHTML = '';
             data.forEach(it => {
                 const d = document.createElement('div');
                 d.className = 'menu-item';
@@ -1063,10 +1073,10 @@
                   <div>${it.name}</div>
                   <div>${Number(it.price).toFixed(2)} บาท</div>`; // แสดงราคาเป็นทศนิยม 2 ตำแหน่ง
                     d.onclick = () => { playClick(); addToOrder(it); };
-                    g.appendChild(d);
+                    menuGrid.appendChild(d);
                 }
             });
-            console.log("Menu loaded successfully.");
+            console.log(`Menu loaded successfully. Found ${data.length} items.`);
         }
         
         // 🛒 แสดง popup ตะกร้า
@@ -1121,8 +1131,7 @@
             fetchMenuFromSupabase(); // 🚀 เรียกใช้ฟังก์ชันดึงเมนู
             
             // ให้ทุกปุ่มมีเสียงคลิก (ยกเว้นปุ่มในใบเสร็จ)
-            document.querySelectorAll("button,a").forEach(el => {
-                if (el.closest('#receiptPopup')) return;
+            document.querySelectorAll("button:not(#receiptPopup button),a").forEach(el => {
                 el.addEventListener("click", playClick);
             });
         });
