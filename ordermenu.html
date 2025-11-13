@@ -1003,13 +1003,14 @@
                 }
 
                 return {
-                    receipt_id: receiptId,
-                    menu_id: finalMenuId, // ใช้ค่าที่ถูกตรวจสอบแล้ว
-                    item_name: itemName,
-                    price_per_unit: item.price,
-                    quantity: item.quantity,
-                    total_price: item.price * item.quantity
-                };
+  receipt_id: Number(receiptId),
+  menu_id: Number(finalMenuId),
+  item_name: itemName,
+  price_per_unit: Number(item.price),
+  quantity: Number(item.quantity),
+  total_price: Number(item.price * item.quantity)
+};
+
             }).filter(item => item !== null); // กรองรายการที่เป็น null ออกไป
 
             // **🛑 ป้องกันกรณี itemsToInsert เป็นอาร์เรย์ว่าง**
