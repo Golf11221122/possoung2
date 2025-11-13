@@ -652,8 +652,16 @@
         <button onclick="playClick(); closeReceipt()">ปิด</button>
     </div>
 
+    <div id="cartButton" class="cart-button" onclick="showCart()">
+        🛒 ตะกร้า (<span id="cartCount">0</span>)
+    </div>
+    
     <script>
-        let audioCtx, initAudio = () => {
+        let order = {}, discountPercent = 0;
+        let audioCtx, supabase;
+
+        // ---------------- ระบบเสียงและสั่น ----------------
+        let initAudio = () => {
             try {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             } catch (e) {
@@ -661,10 +669,14 @@
             }
         };
 
-        initAudio();
+        initAudio(); // เรียกใช้งาน AudioContext
 
         function playClick() {
             if (!audioCtx) return;
+            // ปลุก AudioContext หากอยู่ในสถานะ suspended
+            if (audioCtx.state === "suspended") {
+                audioCtx.resume();
+            }
             const osc = audioCtx.createOscillator(),
                 gain = audioCtx.createGain();
             osc.connect(gain);
@@ -679,6 +691,9 @@
 
         function playError() {
             if (!audioCtx) return;
+            if (audioCtx.state === "suspended") {
+                audioCtx.resume();
+            }
             const osc = audioCtx.createOscillator(),
                 gain = audioCtx.createGain();
             osc.connect(gain);
@@ -691,58 +706,24 @@
             if (navigator.vibrate) navigator.vibrate([100, 60, 100]);
         }
 
-        // ให้ทุกปุ่มมีเสียงคลิก
-        document.addEventListener("DOMContentLoaded", () => {
-            document.querySelectorAll("button:not(#receiptPopup button),a").forEach(el => {
-                el.addEventListener("click", (e) => {
-                    // ป้องกันการเล่นเสียงซ้ำซ้อน
-                    if (e.target.closest('#receiptPopup')) return;
-                    playClick();
-                });
-            });
-        });
-
         // เสียงตอนแจ้งเตือน error
         const _alert = window.alert;
         window.alert = function (msg) {
             playError();
             _alert(msg);
         };
-    </script>
-
-
-    <script>
-        document.addEventListener("click", () => {
-            try {
-                if (typeof audioCtx !== "undefined" && audioCtx.state === "suspended") {
-                    audioCtx.resume();
-                } else if (typeof initAudio === "function" && (!audioCtx || audioCtx.state !== "running")) {
-                    initAudio();
-                }
-            } catch (e) {
-                console.warn("Audio init/resume failed:", e);
-            }
-        }, { once: true });
-    </script>
-
-    <div id="cartButton" class="cart-button" onclick="showCart()">
-        🛒 ตะกร้า (<span id="cartCount">0</span>)
-    </div>
-
-    <script>
-        let order = {}, discountPercent = 0;
-
+        
         // ---------------- Supabase Setup ----------------
         const SUPABASE_URL = "https://puyjxvkbpxsncrblquaxo.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1anh5a2JweHNuY2JybHF1YXhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3OTI0OTIsImV4cCI6MjA3ODM2ODQ5Mn0.JxavkquEZo0W7NME4CJ01GbLKR0_gYFdcKy2BWCrAso";
 
         // ✅ แก้ไข: สร้าง client instance โดยตรงจาก window.supabase
-        let supabase;
         try {
             if (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function') {
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                console.log("Supabase Client Created Successfully.");
             } else {
-                 console.error("Supabase client library not found (window.supabase is undefined).");
+                 console.error("Supabase client library not found (window.supabase is undefined). Check CDN load.");
             }
         } catch (e) {
             console.error("Error creating Supabase client:", e);
@@ -843,10 +824,10 @@
       <div class='order-item'>
         <div>${n}</div>
         <div class='controls'>
-          <button onclick="changeQty('${n}',-1)">-</button>
+          <button onclick="playClick(); changeQty('${n}',-1)">-</button>
           <span>${it.quantity}</span>
-          <button onclick="changeQty('${n}',1)">+</button>
-          <button onclick="removeItem('${n}')">🗑️</button>
+          <button onclick="playClick(); changeQty('${n}',1)">+</button>
+          <button onclick="playClick(); removeItem('${n}')">🗑️</button>
         </div>
       </div>`;
             }
@@ -866,16 +847,7 @@
             
             // แสดง/ซ่อน summary สำหรับ Desktop
             if (!isMobile) {
-                if (Object.keys(order).length > 0) {
-                    summaryDiv.style.display = 'block';
-                } else {
-                    summaryDiv.style.display = 'none';
-                    // ปิด Popup สรุปยอดหากไม่มีรายการในตะกร้า
-                    document.getElementById('overlay').style.display = 'none';
-                    summaryDiv.classList.remove('active');
-                }
-            } else {
-                 // สำหรับ Mobile ต้องจัดการด้วย showCart()
+                summaryDiv.style.display = Object.keys(order).length > 0 ? 'block' : 'none';
             }
         }
         function getTotal() {
@@ -903,7 +875,7 @@
                 discountPercent = 0;
                 updateSummary();
                 updateCartCount();
-                closeAllPopups(); // ปิด summary/ตะกร้าด้วย
+                closeAllPopups();
             }
         }
         // ---------------- Keypad สำหรับเงินสด ----------------
@@ -972,7 +944,7 @@
     </tr>`;
 
             let subtotal = 0, totalQty = 0;
-            const currentOrder = {...order}; // ใช้สำเนาของ order
+            const currentOrder = {...order};
             const currentDiscountPercent = discountPercent;
 
             for (const n in currentOrder) {
@@ -1065,7 +1037,7 @@
         // 🚀 NEW: ดึงเมนูจาก Supabase ตาราง 'menu'
         async function fetchMenuFromSupabase() {
             if (!supabase) {
-                document.getElementById('menuGrid').innerHTML = 'ไม่สามารถเชื่อมต่อ Supabase ได้ (Client ไม่ถูกสร้าง)';
+                document.getElementById('menuGrid').innerHTML = 'ไม่สามารถเชื่อมต่อ Supabase ได้ (Client ไม่ถูกสร้าง หรือเกิดข้อผิดพลาดในการเชื่อมต่อ)';
                 return;
             }
 
@@ -1094,11 +1066,9 @@
                     g.appendChild(d);
                 }
             });
+            console.log("Menu loaded successfully.");
         }
         
-        // ให้โหลดเมนูทันทีที่หน้าเว็บโหลด
-        document.addEventListener("DOMContentLoaded", fetchMenuFromSupabase);
-
         // 🛒 แสดง popup ตะกร้า
         function showCart() {
             if (Object.keys(order).length === 0) {
@@ -1128,7 +1098,6 @@
             const el = document.getElementById("orderInfo");
             if (el) el.innerHTML = text;
         }
-        document.addEventListener("DOMContentLoaded", loadOrderInfo);
 
         // 🛒 อัปเดตจำนวนในตะกร้า
         function updateCartCount() {
@@ -1145,6 +1114,18 @@
                 document.getElementById('cartButton').style.display = 'none';
             }
         }
+        
+        // 🔨 Event Listener หลักที่เรียกใช้ฟังก์ชันเมื่อ DOM โหลดเสร็จ
+        document.addEventListener("DOMContentLoaded", () => {
+            loadOrderInfo();
+            fetchMenuFromSupabase(); // 🚀 เรียกใช้ฟังก์ชันดึงเมนู
+            
+            // ให้ทุกปุ่มมีเสียงคลิก (ยกเว้นปุ่มในใบเสร็จ)
+            document.querySelectorAll("button,a").forEach(el => {
+                if (el.closest('#receiptPopup')) return;
+                el.addEventListener("click", playClick);
+            });
+        });
     </script>
 </body>
 
