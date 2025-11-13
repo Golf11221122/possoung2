@@ -715,9 +715,9 @@
         };
         
         // ---------------- Supabase Setup ----------------
-        // 🚨 กรุณาตรวจสอบว่า URL และ Key ถูกต้องและสามารถใช้งานได้
         const SUPABASE_URL = "https://puyjxvkbpxsncrblquaxo.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1anh5a2JweHNuY2JybHF1YXhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3OTI0OTIsImV4cCI6MjA3ODM2ODQ5Mn0.JxavkquEZo0W7NME4CJ01GbLKR0_gYFdcKy2BWCrAso";
+        const N8N_WEBHOOK_URL = "https://golfn8n231135.app.n8n.cloud/webhook-test/hookgolf";
 
         try {
             if (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function') {
@@ -749,8 +749,8 @@
         // ---------------- ส่วนลด ----------------
         function promptDiscountAuth() { showPopup('authPopup'); }
         function submitPin() {
-            const pin = document.getElementById('pinInput').value;
-            if (pin === '000000') {
+            const pin = document.getElementById('pinInput');
+            if (pin.value === '000000') {
                 closeAllPopups();
                 showPopup('discountPopup');
                 clearPin();
@@ -775,6 +775,7 @@
         }
         function removeDiscount() {
             discountPercent = 0;
+            closeAllPopups(); // ปิด popup ส่วนลด
             updateSummary();
             updateCartCount();
         }
@@ -928,14 +929,15 @@
 
         // ---------------- ใบเสร็จ ----------------
         function showReceipt(method, paid, change) {
+            // ⭐ แก้ไข: ดึง customerCount มาเก็บในตัวแปร peopleCount เพื่อให้สอดคล้องกับคอลัมน์ใน Supabase
             const orderType = localStorage.getItem("orderType") || "-";
-            const customerCount = localStorage.getItem("customerCount") || "-";
+            const peopleCount = localStorage.getItem("customerCount") || "-"; 
             const tableNumber = localStorage.getItem("tableNumber") || "-";
             closeAllPopups();
 
             let html = `
   <div style="margin-bottom:10px; font-weight:600;">
-    🍽️ ${orderType} | 👥 ${customerCount} คน | 🪑 โต๊ะ ${tableNumber}
+    🍽️ ${orderType} | 👥 ${peopleCount} คน | 🪑 โต๊ะ ${tableNumber}
   </div>
   <table class="receipt-table">
     <tr>
@@ -947,7 +949,8 @@
             let subtotal = 0, totalQty = 0;
             const currentOrder = {...order};
             const currentDiscountPercent = discountPercent;
-
+            const net = getTotal(); // ราคาสุทธิ
+            
             for (const n in currentOrder) {
                 const it = currentOrder[n];
                 subtotal += it.price * it.quantity;
@@ -963,7 +966,7 @@
             const discount = subtotal * (currentDiscountPercent / 100);
             const totalAfterDiscount = subtotal - discount;
             const { beforeVat, vatAmount } = calcTaxFromIncluded(totalAfterDiscount);
-            const net = totalAfterDiscount;
+            
 
             html += `
   <tr>
@@ -989,14 +992,18 @@
             document.getElementById('receiptDetails').innerHTML = html;
             showPopup('receiptPopup');
 
-            // ✅ เตรียมข้อมูลสำหรับส่งไป n8n (ต้องอยู่ก่อนล้าง order)
+            // ✅ เตรียมข้อมูลสำหรับส่งไป n8n (Webhook)
             const payload = {
                 receipt_id: "RC" + Date.now(),
                 datetime: new Date().toLocaleString("th-TH"),
-                staff: "พนักงาน A", // หรือดึงข้อมูลพนักงานจากระบบจริง
+                staff: "พนักงาน A", 
                 payment_method: method,
                 total: net,
                 discount: currentDiscountPercent,
+                // ⭐ แก้ไขตรงนี้: เพิ่ม people_count และ table_number
+                people_count: peopleCount, 
+                table_number: tableNumber,
+                // **
                 items: Object.keys(currentOrder).map(name => ({
                     name: name,
                     qty: currentOrder[name].quantity,
@@ -1016,7 +1023,7 @@
 
         async function sendOrderToWebhook(payload) {
             try {
-                const res = await fetch("https://golfn8n231135.app.n8n.cloud/webhook-test/hookgolf", {
+                const res = await fetch(N8N_WEBHOOK_URL, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(payload)
@@ -1035,7 +1042,7 @@
         function goHome() { window.location.href = 'index.html'; }
         function goBack() { window.history.back(); }
 
-        // 🚀 NEW: ดึงเมนูจาก Supabase ตาราง 'menu'
+        // 🚀 ดึงเมนูจาก Supabase ตาราง 'menu'
         async function fetchMenuFromSupabase() {
             const menuGrid = document.getElementById('menuGrid');
             if (!supabase) {
@@ -1043,7 +1050,7 @@
                 return;
             }
 
-            // ⭐ แก้ไข: ยืนยันว่าใช้ชื่อตาราง 'menu' (ตัวพิมพ์เล็ก)
+            // ⭐ ยืนยันว่าใช้ชื่อตาราง 'menu' (ตัวพิมพ์เล็ก)
             const { data, error } = await supabase
                 .from('menu') 
                 .select('*'); 
@@ -1057,7 +1064,7 @@
             }
             
             if (data.length === 0) {
-                 menuGrid.innerHTML = '<span style="color: orange; font-weight: bold;">✅ เชื่อมต่อสำเร็จ **ตารางถูก** แต่ไม่พบรายการในตาราง 'menu' (อาจเพราะติด **RLS** หรือไม่มีข้อมูล)</span>';
+                 menuGrid.innerHTML = '<span style="color: orange; font-weight: bold;">✅ เชื่อมต่อสำเร็จ ตารางถูก แต่ไม่พบรายการในตาราง 'menu' (อาจติด **RLS** หรือไม่มีข้อมูล)</span>';
                  return;
             }
 
@@ -1069,7 +1076,7 @@
                 // ตรวจสอบว่ามี price และ name ก่อนสร้างเมนู
                 if (it.name && it.price !== undefined) { 
                     d.innerHTML = `
-                  <div class='image-placeholder'>[รูปอาหาร]</div>
+                  <div class='image-placeholder'></div>
                   <div>${it.name}</div>
                   <div>${Number(it.price).toFixed(2)} บาท</div>`; // แสดงราคาเป็นทศนิยม 2 ตำแหน่ง
                     d.onclick = () => { playClick(); addToOrder(it); };
@@ -1101,10 +1108,11 @@
 
         // โหลดข้อมูลลูกค้า / โต๊ะ / ประเภทการสั่ง
         function loadOrderInfo() {
+            // ⭐ แก้ไข: ดึง customerCount มาเก็บในตัวแปร peopleCount เพื่อแสดงผล
             const orderType = localStorage.getItem("orderType") || "-";
-            const customerCount = localStorage.getItem("customerCount") || "-";
+            const peopleCount = localStorage.getItem("customerCount") || "-"; 
             const tableNumber = localStorage.getItem("tableNumber") || "-";
-            const text = `🍽️ ${orderType} | 👥 ${customerCount} คน | 🪑 โต๊ะ ${tableNumber}`;
+            const text = `🍽️ ${orderType} | 👥 ${peopleCount} คน | 🪑 โต๊ะ ${tableNumber}`;
             const el = document.getElementById("orderInfo");
             if (el) el.innerHTML = text;
         }
