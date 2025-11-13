@@ -1,292 +1,1133 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>เมนูอาหาร</title>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
-  <style>
-    :root{--orange:#FFA500;--orange-2:#FFB84D;--blue:#0047AB;--blue-2:#0066CC;--white:#FFFFFF;--glass:rgba(255,255,255,0.9)}
-    body{font-family:'Prompt',sans-serif;background:linear-gradient(135deg,var(--orange) 0%,#fff 60%,var(--blue));color:#002366;margin:0;padding:0}
-    header{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;background:transparent;gap:10px}
-    .btn-nav{padding:8px 14px;border:none;border-radius:10px;background:var(--glass);color:#002366;font-weight:600;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,0.06);transition:transform .15s}
-    .btn-nav:hover{transform:translateY(-2px)}
-    h1{text-align:center;margin:8px 0 12px;font-size:1.5rem;color:#002366}
-    .container{display:flex;gap:12px;padding:12px;align-items:flex-start}
-    .order-summary{width:320px;background:var(--glass);border-radius:16px;padding:14px;margin-right:8px;min-width:260px;box-shadow:0 8px 24px rgba(0,0,0,0.1);border:1px solid rgba(0,0,0,0.05)}
-    .order-summary button{width:100%;margin:6px 0;padding:10px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:1rem;transition:transform .15s}
-    .order-summary button:hover{transform:translateY(-2px)}
-    .order-summary button:nth-child(4){background:var(--orange);color:white}
-    .order-summary button:nth-child(5){background:#4CAF50;color:white}
-    .order-summary button:nth-child(6){background:var(--blue);color:white}
-    .order-summary button:nth-child(7){background:#f44336;color:white}
-    .menu-grid{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;align-items:start}
-    .menu-item{background:#fff;border-radius:14px;text-align:center;box-shadow:0 8px 20px rgba(0,0,0,0.08);padding:12px;cursor:pointer;transition:transform .14s}
-    .menu-item:hover{transform:translateY(-6px)}
-    .image-placeholder{width:100%;height:110px;background:#eee;border-radius:10px;overflow:hidden;margin-bottom:10px}
-    .image-placeholder img{width:100%;height:100%;object-fit:cover}
-    .cart-button{position:fixed;bottom:18px;right:18px;background:linear-gradient(90deg,#0047AB,#0066CC);color:white;border-radius:50px;padding:12px 18px;font-size:1.1rem;font-weight:700;box-shadow:0 4px 10px rgba(0,0,0,0.3);z-index:1100;cursor:pointer;transition:transform .15s;border:none}
-    .cart-button:hover{transform:scale(1.05)}
-    .cart-button span{background:#FF4500;border-radius:12px;padding:2px 6px;font-size:.9rem;margin-left:4px}
-    .popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:20px;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,0.2);z-index:1000;width:340px;text-align:center;display:none}
-    .overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.45);display:none;z-index:999}
-    .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
-    .keypad button{padding:14px;font-size:1.2rem;border-radius:10px;border:none;background-color:var(--orange);color:white;font-weight:600;cursor:pointer;transition:transform .12s}
-    .keypad button:hover{background-color:var(--orange-2);transform:scale(1.05)}
-    .popup input{padding:10px;width:90%;border-radius:8px;border:1px solid rgba(0,0,0,0.08);text-align:center;font-size:1.2rem}
-    .order-item{display:flex;justify-content:space-between;align-items:center;padding:8px;margin:4px 0;background:white;border-radius:8px}
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>เมนูอาหาร</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --orange: #FFA500;
+            --orange-2: #FFB84D;
+            --blue: #0047AB;
+            --blue-2: #0066CC;
+            --white: #FFFFFF;
+            --glass: rgba(255, 255, 255, 0.9);
+        }
+
+        body {
+            font-family: 'Prompt', sans-serif;
+            background: linear-gradient(135deg, var(--orange) 0%, #ffffff 60%, var(--blue));
+            color: #002366;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 18px;
+            background: transparent;
+            gap: 10px;
+        }
+
+        .btn-nav {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 10px;
+            background: var(--glass);
+            color: #002366;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+            transition: transform .15s ease;
+        }
+
+        .btn-nav:hover {
+            transform: translateY(-2px);
+        }
+
+        h1 {
+            text-align: center;
+            margin: 8px 0 12px;
+            font-size: 1.5rem;
+            color: #002366;
+        }
+
+        .container {
+            display: flex;
+            gap: 12px;
+            padding: 12px;
+            align-items: flex-start;
+        }
+
+        .order-summary {
+            width: 320px;
+            background: var(--glass);
+            border-radius: 16px;
+            padding: 14px;
+            margin-right: 8px;
+            min-width: 260px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .order-summary h3 {
+            text-align: center;
+            margin-top: 0;
+            color: #002366;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 8px;
+        }
+
+        .order-item .controls button {
+            font-size: 0.95rem;
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 8px;
+            background: var(--orange);
+            color: white;
+            cursor: pointer;
+            font-weight: 700;
+            transition: transform .12s ease;
+        }
+
+        .order-item .controls button:hover {
+            transform: scale(1.1);
+            background: var(--orange-2);
+        }
+
+        .summary-total {
+            margin-top: 12px;
+            font-weight: 700;
+            color: #002366;
+            line-height: 1.4;
+            text-align: center;
+        }
+
+        .menu-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 14px;
+            align-items: start;
+        }
+
+        .menu-item {
+            background: #ffffff;
+            border-radius: 14px;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            padding: 12px;
+            cursor: pointer;
+            transition: transform .14s ease;
+        }
+
+        .menu-item:hover {
+            transform: translateY(-6px);
+        }
+
+        .image-placeholder {
+            width: 100%;
+            height: 110px;
+            background: #eee;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+        }
+
+        .order-summary button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            margin-top: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+        .order-summary button:first-of-type {
+            background: linear-gradient(90deg, var(--blue), var(--blue-2));
+            color: white;
+        }
+
+        .order-summary button:nth-of-type(2) {
+            background: linear-gradient(90deg, var(--orange), var(--orange-2));
+            color: #002366;
+        }
+
+        .order-summary button:nth-of-type(3) {
+            background: linear-gradient(90deg, #FF6347, #FF4500);
+            color: white;
+        }
+
+        .order-summary button:nth-of-type(4) {
+            background: linear-gradient(90deg, #999, #666);
+            color: white;
+        }
+
+        .order-summary button:hover {
+            transform: scale(1.05);
+        }
+
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            padding: 20px;
+            border-radius: 14px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            width: 340px;
+            text-align: center;
+            display: none;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.45);
+            display: none;
+            z-index: 999;
+        }
+
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .keypad button {
+            padding: 14px;
+            font-size: 1.2rem;
+            border-radius: 10px;
+            border: none;
+            background-color: var(--orange);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform .12s ease;
+        }
+
+        .keypad button:hover {
+            background-color: var(--orange-2);
+            transform: scale(1.05);
+        }
+
+        .popup input {
+            padding: 10px;
+            width: 90%;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            text-align: center;
+            font-size: 1.2rem;
+        }
+
+        .payment-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .payment-buttons button {
+            flex: 1;
+            background: linear-gradient(90deg, #FFD27F, #FFB84D) !important;
+            color: #002366 !important;
+            font-weight: 700 !important;
+            border: none !important;
+            border-radius: 12px !important;
+            padding: 10px 0 !important;
+            font-size: 1rem !important;
+            cursor: pointer !important;
+            transition: transform .15s ease, background .2s !important;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .payment-buttons button:hover {
+            transform: scale(1.05);
+            background: linear-gradient(90deg, #FFC04D, #FFA500) !important;
+        }
+
+        /* 🔧 ปรับขนาดใบเสร็จและ QR Code ไม่ให้ใหญ่เกินไป */
+        #receiptPopup {
+            width: 320px !important;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        #receiptPopup img {
+            width: 80px !important;
+            height: auto;
+            display: block;
+            margin: 0 auto 6px;
+        }
+
+        /* จำกัดขนาด QR Code */
+        #qrPopup img {
+            width: 180px !important;
+            height: auto;
+            margin: 0 auto;
+            display: block;
+            border-radius: 8px;
+        }
+
+        #receiptPopup {
+            background: #fff;
+            border: 1px solid #ccc;
+        }
+
+        /* ปรับขนาด QR และป๊อปอัปให้ดูดีขึ้น */
+        #qrPopup {
+            width: 320px;
+            text-align: center;
+            border-radius: 16px;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        #qrPopup h3 {
+            margin-bottom: 10px;
+            color: #0047AB;
+        }
+
+        #qrPopup img {
+            width: 180px;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 10px;
+        }
+
+        #qrPopup button {
+            background: linear-gradient(90deg, #4CAF50, #45A049);
+            color: white;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 16px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        #qrPopup button:hover {
+            transform: scale(1.05);
+        }
+
+        /* ปรับ UI ของใบเสร็จให้สวยขึ้น */
+        #receiptPopup {
+            width: 320px !important;
+            max-height: 90vh;
+            overflow-y: auto;
+            border-radius: 16px;
+            background: #fff;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            padding: 20px;
+        }
+
+        #receiptPopup h2 {
+            color: #0047AB;
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+        }
+
+        #receiptPopup button {
+            display: inline-block;
+            width: 48%;
+            border-radius: 10px;
+            padding: 10px 0;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: transform 0.2s ease;
+        }
+
+        #receiptPopup button:first-of-type {
+            background: linear-gradient(90deg, #4CAF50, #45A049);
+            color: white;
+        }
+
+        #receiptPopup button:nth-of-type(2) {
+            background: linear-gradient(90deg, #999, #777);
+            color: white;
+        }
+
+        #receiptPopup button:hover {
+            transform: scale(1.05);
+        }
+
+        .receipt-header img {
+            width: 80px !important;
+            height: auto;
+            margin-bottom: 6px;
+        }
+
+
+        /* ซ่อนปุ่มตอนพิมพ์ */
+        @media print {
+            #receiptPopup button {
+                display: none !important;
+            }
+        }
+
+        .receipt-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .receipt-table th,
+        .receipt-table td {
+            border-bottom: 1px dashed rgba(0, 0, 0, 0.15);
+            padding: 6px 8px;
+            font-size: 0.95rem;
+        }
+
+        /* ซ่อนปุ่มตอนพิมพ์ */
+        @media print {
+            #receiptPopup button {
+                display: none !important;
+            }
+
+            #receiptPopup {
+                width: 100% !important;
+                box-shadow: none !important;
+            }
+        }
+
+        .discount-btn {
+            background: linear-gradient(90deg, #FFA500, #FFB84D);
+            color: #002366;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .discount-btn:hover {
+            transform: translateY(-3px);
+            background: linear-gradient(90deg, #FFB84D, #FFD27F);
+        }
+
+        .discount-clear-btn {
+            margin-top: 16px;
+            background: linear-gradient(90deg, #999, #666);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .discount-clear-btn:hover {
+            transform: scale(1.05);
+            background: linear-gradient(90deg, #666, #444);
+        }
+
+        /* 📱 ปรับ layout สำหรับมือถือ */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .order-summary {
+                position: sticky;
+                top: 0;
+                width: 100%;
+                z-index: 1000;
+                margin: 0 0 10px 0;
+                border-radius: 0 0 16px 16px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            }
+
+            .menu-grid {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            }
+        }
+
+        /* 📱 ปรับ layout สำหรับมือถือ (สองแถว) */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .order-summary {
+                position: sticky;
+                top: 0;
+                width: 100%;
+                z-index: 1000;
+                margin: 0 0 10px 0;
+                border-radius: 0 0 16px 16px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            }
+
+            .menu-grid {
+                grid-template-columns: repeat(2, 1fr);
+                /* ✅ ให้แสดง 2 คอลัมน์ */
+                gap: 10px;
+            }
+
+            .menu-item {
+                padding: 8px;
+                border-radius: 12px;
+                font-size: 0.9rem;
+            }
+
+            .image-placeholder {
+                height: 80px;
+                /* ✅ ลดขนาดรูป */
+                font-size: 0.8rem;
+            }
+        }
+
+
+        /* 🛒 ปุ่มตะกร้า */
+        .cart-button {
+            position: fixed;
+            bottom: 18px;
+            right: 18px;
+            background: linear-gradient(90deg, #0047AB, #0066CC);
+            color: white;
+            border-radius: 50px;
+            padding: 12px 18px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            z-index: 1100;
+            cursor: pointer;
+            transition: transform .15s ease;
+        }
+
+        .cart-button:hover {
+            transform: scale(1.05);
+        }
+
+        .cart-button span {
+            background: #FF4500;
+            border-radius: 12px;
+            padding: 2px 6px;
+            font-size: 0.9rem;
+            margin-left: 4px;
+        }
+    </style>
+
 </head>
 
 <body>
-  <div class="overlay" id="overlay" onclick="closeAllPopups()"></div>
+    <div class="overlay" id="overlay" onclick="closeAllPopups()"></div>
+    <header>
+        <button class="btn-nav" onclick="playClick(); goHome()">← Home</button>
+        <button class="btn-nav" onclick="playClick(); goBack()">← Back</button>
+    </header>
+    <h1>เมนูอาหาร</h1>
 
-  <header>
-    <button class="btn-nav" onclick="playClick(); goHome()">← Home</button>
-    <button class="btn-nav" onclick="playClick(); goBack()">← Back</button>
-  </header>
-
-  <h1>เมนูอาหาร</h1>
-  <div class="container">
-    <div class="order-summary" id="orderSummary" style="display:none;">
-      <h3>รายการสั่งซื้อ</h3>
-      <div id="orderItems"></div>
-      <div id="totalSummary" style="text-align:center;margin-top:10px;font-size:1.2rem;font-weight:700;"></div>
-      <button onclick="playClick(); closeCart()">➕ กลับไปสั่งเพิ่ม</button>
-      <button onclick="playClick(); payCash()">💵 เงินสด</button>
-      <button onclick="playClick(); payQR()">📱 QR Code</button>
-      <button onclick="playClick(); cancelOrder()">✖ ยกเลิก</button>
+    <div class="container">
+        <div class="order-summary" id="orderSummary" style="display:none;">
+            <h3>รายการสั่งซื้อ</h3>
+            <div id="orderInfo" style="text-align:center; margin-bottom:8px; font-weight:600; color:#0047AB;"></div>
+            <div id="orderItems"></div>
+            <div class="summary-total" id="totalSummary"></div>
+            <button onclick="playClick(); closeCart()">➕ กลับไปสั่งเพิ่ม</button>
+            <button onclick="playClick(); promptDiscountAuth()">🎁 ส่วนลด</button>
+            <button onclick="playClick(); submitOrder()">✅ ชำระเงิน</button>
+            <button onclick="playClick(); cancelOrder()">❌ ยกเลิก</button>
+            <button onclick="playClick(); removeDiscount()">🧹 ลบส่วนลด</button>
+        </div>
+        <div class="menu-grid" id="menuGrid">กำลังโหลดเมนู...</div>
     </div>
-    <div class="menu-grid" id="menuGrid">กำลังโหลดเมนู...</div>
-  </div>
 
-  <button class="cart-button" id="cartButton" onclick="showCart()" style="display:none;">
-    🛒 ตะกร้า <span id="cartCount">0</span>
-  </button>
-
-  <div class="popup" id="cashPopup">
-    <h3>ชำระด้วยเงินสด</h3>
-    <p>ยอดที่ต้องชำระ: <strong><span id="cashAmount"></span> ฿</strong></p>
-    <input type="text" id="cashInput" placeholder="จำนวนเงินที่ลูกค้าชำระ" readonly />
-    <div class="keypad">
-      <button onclick="appendCash('1')">1</button><button onclick="appendCash('2')">2</button><button onclick="appendCash('3')">3</button>
-      <button onclick="appendCash('4')">4</button><button onclick="appendCash('5')">5</button><button onclick="appendCash('6')">6</button>
-      <button onclick="appendCash('7')">7</button><button onclick="appendCash('8')">8</button><button onclick="appendCash('9')">9</button>
-      <button onclick="clearCash()">C</button><button onclick="appendCash('0')">0</button>
-      <button onclick="confirmCash()">✅</button>
+    <div class="popup" id="discountPopup">
+        <h3 style="color:#0047AB; margin-bottom:14px;">🎁 เลือกระดับส่วนลด</h3>
+        <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+            <button class="discount-btn" onclick="playClick(); applyDiscount(5)">5%</button>
+            <button class="discount-btn" onclick="playClick(); applyDiscount(10)">10%</button>
+            <button class="discount-btn" onclick="playClick(); applyDiscount(15)">15%</button>
+            <button class="discount-btn" onclick="playClick(); applyDiscount(20)">20%</button>
+        </div>
+        <button class="discount-clear-btn" onclick="playClick(); removeDiscount()">🧹 ล้างส่วนลด</button>
     </div>
-    <p id="changeDisplay" style="margin-top:8px;font-weight:600;color:#4CAF50;"></p>
+
+    <div class="popup" id="authPopup">
+        <h3>กรอกรหัสยืนยัน</h3>
+        <input id="pinInput" type="password" maxlength="6" readonly>
+        <div class="keypad">
+            <button onclick="playClick(); appendPin('1')">1</button>
+            <button onclick="playClick(); appendPin('2')">2</button>
+            <button onclick="playClick(); appendPin('3')">3</button>
+            <button onclick="playClick(); appendPin('4')">4</button>
+            <button onclick="playClick(); appendPin('5')">5</button>
+            <button onclick="playClick(); appendPin('6')">6</button>
+            <button onclick="playClick(); appendPin('7')">7</button>
+            <button onclick="playClick(); appendPin('8')">8</button>
+            <button onclick="playClick(); appendPin('9')">9</button>
+            <button onclick="playClick(); clearPin()">C</button>
+            <button onclick="playClick(); appendPin('0')">0</button>
+            <button onclick="playClick(); submitPin()">✅</button>
+        </div>
+    </div>
+
+    <div class="popup" id="cashPopup">
+        <h3>ชำระด้วยเงินสด</h3>
+        <p>ยอดที่ต้องชำระ: <strong><span id="cashAmount"></span> ฿</strong></p>
+        <input type="text" id="cashInput" placeholder="จำนวนเงินที่ลูกค้าชำระ" />
+
+        <div class="keypad">
+            <button onclick="playClick(); appendCash('1')">1</button>
+            <button onclick="playClick(); appendCash('2')">2</button>
+            <button onclick="playClick(); appendCash('3')">3</button>
+            <button onclick="playClick(); appendCash('4')">4</button>
+            <button onclick="playClick(); appendCash('5')">5</button>
+            <button onclick="playClick(); appendCash('6')">6</button>
+            <button onclick="playClick(); appendCash('7')">7</button>
+            <button onclick="playClick(); appendCash('8')">8</button>
+            <button onclick="playClick(); appendCash('9')">9</button>
+            <button onclick="playClick(); clearCash()">C</button>
+            <button onclick="playClick(); appendCash('0')">0</button>
+            <button onclick="playClick(); confirmCash()">✅</button>
+        </div>
+        <p id="changeDisplay" style="margin-top:8px;font-weight:600;"></p>
+    </div>
+
+    <div class="popup" id="qrPopup">
+        <h3>สแกนเพื่อชำระเงิน</h3>
+        <img id="qrImage" src="kshop.jpg" alt="QR Code">
+        <p>กรุณาชำระยอด <strong><span id="qrAmount"></span> ฿</strong></p>
+        <button onclick="playClick(); confirmQR()">✅ ชำระเงินเสร็จแล้ว</button>
+    </div>
+
+    <div class="popup" id="paymentPopup">
+        <h3>เลือกวิธีชำระเงิน</h3>
+        <div class="payment-buttons">
+            <button onclick="playClick(); payCash()">💵 เงินสด</button>
+            <button onclick="playClick(); payQR()">📱 QR Code</button>
+        </div>
+    </div>
+
+    <div class="popup" id="receiptPopup" style="width:360px;text-align:left;">
+        <div class="receipt-header">
+            <img src="logo.jpg" alt="โลโก้ร้านชายสี่บะหมี่เกี๊ยว">
+            <h3 style="text-align:center;">ชายสี่บะหมี่เกี๊ยว กอล์ฟบ้านไผ่</h3>
+            <h5 style="text-align:center;">ที่อยู่ 95/7 ม.7 ต.ในเมือง อ.บ้านไผ่ จ.ขอนแก่น 40110</h5>
+            <h5 style="text-align:center;">เลขที่ผู้เสียภาษี:1409700103387</h5>
+            <h5 style="text-align:center;">โทร.082-3804188</h5>
+        </div>
+        <h4 style="text-align:center;">ใบกำกับภาษีอย่างย่อ/🧾 ใบเสร็จรับเงิน</h4>
+        <div id="receiptDetails"></div>
+        <h5 style="text-align:center;">ขอขอบพระคุณลูกค้าที่มาอุดหนุน</h5>
+        <button onclick="playClick(); window.print()">🖨️ พิมพ์ใบเสร็จ</button>
+        <button onclick="playClick(); closeReceipt()">กลับหน้าแรก</button>
+    </div>
+
+    <script>
+        let order = {}, discountPercent = 0;
+
+        // ---------------- Supabase Configuration ----------------
+        const SUPABASE_URL = "https://puyjxvkbpxsncrblquaxo.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1anh5a2JweHNuY3JibHF1YXhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3OTI0OTIsImV4cCI6MjA3ODM2ODQ5Mn0.JxavkquEZo0W7NME4CJ01GbLKR0_gYFdcKy2BWCrAso";
+
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+
+        // ---------------- Popup Control ----------------
+        function showPopup(id) {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById(id).style.display = 'block';
+        }
+        function closeAllPopups() {
+            document.querySelectorAll('.popup').forEach(p => p.style.display = 'none');
+            document.getElementById('overlay').style.display = 'none';
+        }
+
+        // ---------------- ส่วนลด ----------------
+        function promptDiscountAuth() { showPopup('authPopup'); }
+        function submitPin() {
+            const pin = document.getElementById('pinInput').value;
+            if (pin === '000000') {
+                closeAllPopups();
+                showPopup('discountPopup');
+                clearPin();
+            } else {
+                alert('รหัสไม่ถูกต้อง');
+                clearPin();
+            }
+        }
+        // 🧮 ฟังก์ชันคำนวณภาษีจากราคาที่รวม VAT แล้ว (ราคาสินค้าตั้งไว้รวมภาษี)
+        function calcTaxFromIncluded(totalWithVat) {
+            const beforeVat = totalWithVat / 1.07;
+            const vatAmount = totalWithVat - beforeVat;
+            return { beforeVat, vatAmount };
+        }
+
+
+        function applyDiscount(p) {
+            discountPercent = p;
+            closeAllPopups();
+            updateSummary();
+            updateCartCount(); // ✅ อัปเดตจำนวนตะกร้า
+        }
+        function removeDiscount() {
+            discountPercent = 0;
+            updateSummary();
+            updateCartCount(); // ✅ อัปเดตจำนวนตะกร้า
+        }
+
+        // ---------------- Keypad สำหรับ PIN ----------------
+        function appendPin(num) {
+            const input = document.getElementById('pinInput');
+            if (input.value.length < 6) input.value += num;
+        }
+        function clearPin() {
+            document.getElementById('pinInput').value = '';
+        }
+
+        // ---------------- ฟังก์ชันสั่งอาหาร ----------------
+        function addToOrder(item) {
+            const n = item.name, p = Number(item.price);
+            if (!order[n]) order[n] = { price: p, quantity: 1 };
+            else order[n].quantity++;
+            updateSummary();
+            updateCartCount(); // ✅ อัปเดตจำนวนตะกร้า
+        }
+        function changeQty(n, c) {
+            if (order[n]) {
+                order[n].quantity += c;
+                if (order[n].quantity <= 0) delete order[n];
+                updateSummary();
+                updateCartCount(); // ✅ อัปเดตจำนวนตะกร้า
+            }
+        }
+        function removeItem(n) {
+            delete order[n];
+            updateSummary();
+            updateCartCount(); // ✅ อัปเดตจำนวนตะกร้า
+        }
+        // ---------------- ฟังก์ชันสรุปยอด ----------------
+        function updateSummary() {
+            const s = document.getElementById('orderSummary'),
+                items = document.getElementById('orderItems'),
+                t = document.getElementById('totalSummary');
+
+            items.innerHTML = '';
+            let subtotal = 0;
+            for (const n in order) {
+                const it = order[n];
+                subtotal += it.price * it.quantity;
+                items.innerHTML += `
+      <div class='order-item'>
+        <div>${n}</div>
+        <div class='controls'>
+          <button onclick="changeQty('${n}',-1)">-</button>
+          <span>${it.quantity}</span>
+          <button onclick="changeQty('${n}',1)">+</button>
+          <button onclick="removeItem('${n}')">🗑️</button>
+        </div>
+      </div>`;
+            }
+
+            const discount = subtotal * (discountPercent / 100);
+            const totalAfterDiscount = subtotal - discount;
+            const { beforeVat, vatAmount } = calcTaxFromIncluded(totalAfterDiscount);
+            const net = totalAfterDiscount;
+
+            t.innerHTML = `
+    ยอดรวม (รวมภาษี): ${subtotal.toFixed(2)} ฿<br>
+    ส่วนลด (${discountPercent}%): ${discount.toFixed(2)} ฿<br>
+    ราคาก่อนภาษี: ${beforeVat.toFixed(2)} ฿<br>
+    ภาษี (7%): ${vatAmount.toFixed(2)} ฿<br>
+    <strong>ราคาสุทธิ (รวมภาษี): ${net.toFixed(2)} ฿</strong>
+  `;
+            // ซ่อน popup สรุปยอดไว้เสมอ
+        }
+        function getTotal() {
+            let subtotal = 0;
+            for (const n in order) {
+                subtotal += order[n].price * order[n].quantity;
+            }
+            const discount = subtotal * (discountPercent / 100);
+            const totalAfterDiscount = subtotal - discount;
+            return totalAfterDiscount; // รวมภาษีแล้ว
+        }
+
+        // ---------------- การชำระเงิน ----------------
+        function submitOrder() {
+            if (Object.keys(order).length === 0) {
+                alert('ยังไม่มีรายการสั่งซื้อ');
+                return;
+            }
+            showPopup('paymentPopup');
+        }
+
+        function cancelOrder() {
+            if (confirm('ยืนยันยกเลิกคำสั่งซื้อ?')) {
+                order = {};
+                discountPercent = 0;
+                updateSummary();
+                updateCartCount(); // ✅ อัปเดตจำนวนตะกร้า
+            }
+        }
+        // ---------------- Keypad สำหรับเงินสด ----------------
+        function appendCash(num) {
+            const input = document.getElementById('cashInput');
+            input.value += num;
+        }
+
+        function clearCash() {
+            document.getElementById('cashInput').value = '';
+            document.getElementById('changeDisplay').innerText = '';
+        }
+
+
+        function payCash() {
+            closeAllPopups();
+            const t = getTotal();
+            document.getElementById('cashAmount').innerText = t.toFixed(2);
+            showPopup('cashPopup');
+            clearCash();
+        }
+
+        function payQR() {
+            closeAllPopups();
+            const t = getTotal();
+            document.getElementById('qrAmount').innerText = t.toFixed(2);
+            showPopup('qrPopup');
+        }
+
+        function confirmCash() {
+            const paid = Number(document.getElementById('cashInput').value);
+            const t = getTotal();
+            if (isNaN(paid) || paid <= 0) {
+                alert('กรุณาใส่จำนวนเงินที่ลูกค้าชำระ');
+                return;
+            }
+            if (paid < t) {
+                alert('จำนวนเงินไม่พอ');
+                return;
+            }
+            const change = paid - t;
+            document.getElementById('changeDisplay').innerText = `เงินทอน: ${change.toFixed(2)} ฿`;
+            // ✅ เปลี่ยนไปเรียก saveOrderToSupabase ก่อนแสดงใบเสร็จ
+            saveOrderToSupabase('เงินสด').then(() => {
+                setTimeout(() => showReceipt('เงินสด', paid, change), 800);
+            }).catch(err => {
+                console.error("การบันทึกข้อมูลล้มเหลว:", err);
+                alert("❌ บันทึกใบเสร็จไม่สำเร็จ! กรุณาตรวจสอบ Console (F12)");
+            });
+        }
+
+        function confirmQR() {
+            // ✅ เปลี่ยนไปเรียก saveOrderToSupabase ก่อนแสดงใบเสร็จ
+            saveOrderToSupabase('QR Code').then(() => {
+                showReceipt('QR Code', 0, 0);
+            }).catch(err => {
+                console.error("การบันทึกข้อมูลล้มเหลว:", err);
+                alert("❌ บันทึกใบเสร็จไม่สำเร็จ! กรุณาตรวจสอบ Console (F12)");
+            });
+        }
+
+
+        // ---------------- ฟังก์ชันบันทึกข้อมูลลง Supabase (รวม Logic ที่ถูกต้อง) ----------------
+        async function saveOrderToSupabase(method) {
+            const orderType = localStorage.getItem("orderType") || "Dine-in";
+            const customerCount = localStorage.getItem("customerCount") || "0";
+            const tableNumber = localStorage.getItem("tableNumber") || "-";
+            let subtotal = 0;
+            const items = Object.keys(order).map(name => {
+                const item = order[name];
+                subtotal += item.price * item.quantity;
+                return { name, ...item, total_price: item.price * item.quantity };
+            });
+
+            if (items.length === 0) {
+                console.warn("ไม่มีรายการสินค้าในตะกร้า ไม่ทำการบันทึก");
+                return;
+            }
+
+            const discountAmount = subtotal * (discountPercent / 100);
+            const totalAfterDiscount = subtotal - discountAmount;
+            const { beforeVat, vatAmount } = calcTaxFromIncluded(totalAfterDiscount);
+
+
+            try {
+                // 1) บันทึกใบเสร็จ (insert into receipts)
+                const { data: receiptData, error: receiptError } = await supabase
+                    .from("receipts")
+                    .insert([
+                        {
+                            // ✅ แก้ไข: ลบคอลัมน์ store_* ที่ไม่มีในตาราง receipts
+                            order_type: orderType,
+                            people_count: parseInt(customerCount), // ✅ แก้ไข Key ให้เป็น people_count แล้ว
+                            table_number: tableNumber,
+
+                            subtotal: subtotal,
+                            discount_percent: discountPercent, // ✅ บันทึกส่วนลดเป็นเปอร์เซ็นต์
+                            discount_amount: discountAmount,
+                            total_before_tax: beforeVat,
+                            tax_amount: vatAmount,
+                            total_amount: totalAfterDiscount,
+                            payment_method: method,
+                            service_charge: 0,
+                        }
+                    ])
+                    .select()
+                    .single();
+
+                if (receiptError) throw receiptError;
+
+                const receiptId = receiptData.id;
+                console.log("✅ Receipt saved with ID:", receiptId);
+
+                // 2) บันทึกรายการสินค้า (insert into receipt_items)
+                const itemsToInsert = items.map(item => ({
+                    receipt_id: receiptId,
+                    item_name: item.name,
+                    qty: item.quantity,
+                    price: item.price,
+                    total_price: item.total_price
+                }));
+
+                const { error: itemsError } = await supabase
+                    .from("receipt_items")
+                    .insert(itemsToInsert);
+
+                if (itemsError) throw itemsError;
+
+                console.log("✅ Receipt items saved successfully.");
+
+            } catch (err) {
+                console.error("❌ บันทึกข้อมูล Supabase ล้มเหลว:", err);
+                throw err;
+            }
+        }
+
+
+        // ---------------- ใบเสร็จ ----------------
+        function showReceipt(method, paid, change) {
+            const orderType = localStorage.getItem("orderType") || "-";
+            const customerCount = localStorage.getItem("customerCount") || "-";
+            const tableNumber = localStorage.getItem("tableNumber") || "-";
+            closeAllPopups();
+
+            let html = `
+  <div style="margin-bottom:10px; font-weight:600;">
+    🍽️ ${orderType} | 👥 ${customerCount} คน | 🪑 โต๊ะ ${tableNumber}
   </div>
+  <table class="receipt-table">
+    <tr>
+      <th style="width:60%; text-align:left;">รายการ</th>
+      <th style="width:20%; text-align:center;">จำนวน</th>
+      <th style="width:20%; text-align:right;">ราคา</th>
+    </tr>`;
 
-  <div class="popup" id="qrPopup">
-    <h3>สแกนเพื่อชำระเงิน</h3>
-    <img id="qrImage" src="kshop.jpg" alt="QR Code" style="width:180px;border-radius:10px;">
-    <p>กรุณาชำระยอด <strong><span id="qrAmount"></span> ฿</strong></p>
-    <button onclick="confirmQR()" style="width:100%;padding:12px;background:#4CAF50;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;margin-top:10px">✅ ชำระเงินเสร็จแล้ว</button>
-  </div>
+            let subtotal = 0, totalQty = 0;
+            for (const n in order) {
+                const it = order[n];
+                subtotal += it.price * it.quantity;
+                totalQty += it.quantity;
+                html += `
+      <tr>
+        <td>${n}</td>
+        <td style="text-align:center;">${it.quantity}</td>
+        <td style="text-align:right;">${(it.price * it.quantity).toFixed(2)}</td>
+      </tr>`;
+            }
 
-  <audio id="clickSound" src="click.mp3" preload="auto"></audio>
+            const discount = subtotal * (discountPercent / 100);
+            const totalAfterDiscount = subtotal - discount;
+            const { beforeVat, vatAmount } = calcTaxFromIncluded(totalAfterDiscount);
+            const net = totalAfterDiscount;
 
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-    
-    const SUPABASE_URL = "https://pujxykbpxsncbrlquaxo.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1anh5a2JweHNuY2JybHF1YXhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3OTI0OTIsImV4cCI6MjA3ODM2ODQ5Mn0.JxavkquEZo0W7NME4CJ01GbLKR0_gYFdcKy2BWCrAso";
+            html += `
+  <tr>
+    <td colspan="3" style="text-align:left; font-weight:bold;">รวมทั้งหมด: ${totalQty} รายการ</td>
+  </tr>
+  </table>
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-    const menuGrid = document.getElementById("menuGrid");
-    
-    // Make order global
-    window.order = {};
+  <div style="display:flex; justify-content:space-between; margin-top:10px;">
+    <div style="text-align:left;">
+      วิธีชำระ: ${method}<br>
+      ${method === 'เงินสด' ? `ชำระมา: ${paid.toFixed(2)} ฿<br>เงินทอน: ${change.toFixed(2)} ฿<br>` : ''}
+      วันที่: ${new Date().toLocaleString('th-TH')}
+    </div>
+    <div style="text-align:right;">
+      ยอดรวม (รวมภาษี): ${subtotal.toFixed(2)} ฿<br>
+      ส่วนลด (${discountPercent}%): ${discount.toFixed(2)} ฿<br>
+      ราคาก่อนภาษี: ${beforeVat.toFixed(2)} ฿<br>
+      ภาษี (7%): ${vatAmount.toFixed(2)} ฿<br>
+      <strong>ราคาสุทธิ (รวมภาษี): ${net.toFixed(2)} ฿</strong>
+    </div>
+  </div>`;
 
-    async function loadMenu() {
-      try {
-        menuGrid.innerHTML = "กำลังโหลดเมนู...";
-        
-        // ลองดึงข้อมูลทั้งหมดก่อน เพื่อ debug
-        const { data, error } = await supabase
-          .from("menu")
-          .select("id,name,price,category,image,available")
-          .order("id", { ascending: true });
+            document.getElementById('receiptDetails').innerHTML = html;
+            showPopup('receiptPopup');
 
-        console.log("All data:", data); // ดูข้อมูลทั้งหมด
-        console.log("Error:", error);
-
-        if (error) {
-          console.error("โหลดเมนูล้มเหลว:", error);
-          menuGrid.innerHTML = `<p style='color:red;text-align:center;'>โหลดเมนูล้มเหลว: ${error.message}</p>`;
-          return;
+            // ✅ ล้างข้อมูลหลังบันทึกเรียบร้อย
+            order = {};
+            discountPercent = 0;
+            updateSummary();
+            updateCartCount();
         }
 
-        if (!data || data.length === 0) {
-          menuGrid.innerHTML = "<p style='text-align:center;'>ไม่มีข้อมูลในตาราง menu</p>";
-          return;
+        function closeReceipt() { closeAllPopups(); }
+
+        // ---------------- หน้าเมนู ----------------
+        function goHome() { window.location.href = 'index.html'; }
+        function goBack() { window.history.back(); }
+
+        // เพิ่มเสียงให้เมนูอาหารตอนกด
+        fetch("https://script.google.com/macros/s/AKfycbwvYTBu1lZ-IukUtsg2ylzALbEEoYARxjgyWh7VmTDP9lTXhs6Axv7uNcRIE3DCGjaQ/exec")
+            .then(r => r.json())
+            .then(data => {
+                const g = document.getElementById('menuGrid');
+                g.innerHTML = '';
+                data.forEach(it => {
+                    const d = document.createElement('div');
+                    d.className = 'menu-item';
+                    d.innerHTML = `
+              <div class='image-placeholder'>[รูปอาหาร]</div>
+              <div>${it.name}</div>
+              <div>${it.price} บาท</div>`;
+                    d.onclick = () => { playClick(); addToOrder(it); };
+                    g.appendChild(d);
+                });
+            });
+
+        // 🛒 แสดง popup ตะกร้า
+        function showCart() {
+            if (Object.keys(order).length === 0) {
+                alert('ยังไม่มีรายการในตะกร้า');
+                return;
+            }
+            showPopup('orderSummary');
         }
 
-        // กรองเฉพาะที่ available = true
-        const availableItems = data.filter(item => item.available === true);
-        console.log("Available items:", availableItems);
-
-        if (availableItems.length === 0) {
-          menuGrid.innerHTML = `<p style='text-align:center;'>ไม่มีเมนูที่พร้อมขาย<br><small>พบข้อมูลทั้งหมด ${data.length} รายการ</small></p>`;
-          return;
+        // 🛒 ปิด popup และกลับไปสั่งเพิ่ม
+        function closeCart() {
+            document.getElementById('orderSummary').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
         }
 
-        menuGrid.innerHTML = availableItems.map(item => `
-          <div class="menu-item" onclick="window.addToCart('${item.id}','${item.name.replace(/'/g, "\\'")}',${item.price})">
-            <div class="image-placeholder">
-              <img src="${item.image || 'kshop.jpg'}" alt="${item.name}" onerror="this.src='kshop.jpg'">
-            </div>
-            <h3 style="margin:8px 0;font-size:1.1rem;">${item.name}</h3>
-            <p style="color:#666;font-size:0.9rem;margin:4px 0;">${item.category || ""}</p>
-            <strong style="color:#0047AB;font-size:1.1rem;">${item.price} ฿</strong>
-          </div>
-        `).join("");
-        
-      } catch (err) {
-        console.error("Error loading menu:", err);
-        menuGrid.innerHTML = "<p style='color:red;text-align:center;'>เกิดข้อผิดพลาด กรุณาลองใหม่</p>";
-      }
-    }
+        // โหลดข้อมูลลูกค้า / โต๊ะ / ประเภทการสั่ง
+        function loadOrderInfo() {
+            const orderType = localStorage.getItem("orderType") || "-";
+            const customerCount = localStorage.getItem("customerCount") || "-";
+            const tableNumber = localStorage.getItem("tableNumber") || "-";
+            const text = `🍽️ ${orderType} | 👥 ${customerCount} คน | 🪑 โต๊ะ ${tableNumber}`;
+            const el = document.getElementById("orderInfo");
+            if (el) el.innerHTML = text;
+        }
+        document.addEventListener("DOMContentLoaded", loadOrderInfo);
 
-    // Make functions global
-    window.addToCart = function(id, name, price) {
-      playClick();
-      if (!window.order[id]) {
-        window.order[id] = { id, name, price, quantity: 0 };
-      }
-      window.order[id].quantity++;
-      updateCart();
-    }
+        // 🛒 อัปเดตจำนวนในตะกร้า
+        function updateCartCount() {
+            const count = Object.values(order).reduce((sum, item) => sum + item.quantity, 0);
+            document.getElementById('cartCount').innerText = count;
+            document.getElementById('cartButton').style.display = count > 0 ? 'flex' : 'none';
+        }
 
-    window.updateCart = function() {
-      const items = Object.values(window.order);
-      const total = items.reduce((s, i) => s + i.price * i.quantity, 0);
-      const totalQty = items.reduce((s, i) => s + i.quantity, 0);
-      
-      if (totalQty > 0) {
-        document.getElementById("cartButton").style.display = "block";
-        document.getElementById("cartCount").innerText = totalQty;
-      } else {
-        document.getElementById("cartButton").style.display = "none";
-        document.getElementById("orderSummary").style.display = "none";
-      }
-      
-      if (items.length > 0) {
-        document.getElementById("orderItems").innerHTML = items.map(it => `
-          <div class="order-item">
-            <span>${it.name} x ${it.quantity}</span>
-            <strong>${it.price * it.quantity} ฿</strong>
-          </div>
-        `).join("");
-        document.getElementById("totalSummary").innerHTML = `รวมทั้งหมด: ${total} ฿`;
-      }
-    }
+    </script>
 
-    window.showCart = function() {
-      const items = Object.values(window.order);
-      if (items.length === 0) {
-        alert("ตะกร้าว่างเปล่า");
-        return;
-      }
-      document.getElementById("orderSummary").style.display = "block";
-    }
 
-    window.payCash = function() {
-      const total = Object.values(window.order).reduce((s, i) => s + i.price * i.quantity, 0);
-      document.getElementById("cashAmount").innerText = total;
-      document.getElementById("cashInput").value = "";
-      document.getElementById("changeDisplay").innerText = "";
-      showPopup("cashPopup");
-    }
+    <script>
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
 
-    window.confirmCash = function() {
-      const paid = Number(document.getElementById("cashInput").value || 0);
-      const total = Object.values(window.order).reduce((s, i) => s + i.price * i.quantity, 0);
-      
-      if (paid < total) {
-        alert("เงินไม่พอ กรุณาใส่จำนวนเงินที่มากกว่าหรือเท่ากับยอดชำระ");
-        return;
-      }
-      
-      const change = paid - total;
-      document.getElementById("changeDisplay").innerText = `เงินทอน: ${change} ฿`;
-      
-      setTimeout(() => {
-        closeAllPopups();
-        alert("💵 ชำระเงินสดสำเร็จ!");
-        window.order = {};
-        updateCart();
-      }, 1500);
-    }
+        function playClick() {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = "square";
+            osc.frequency.value = 550;
+            gain.gain.value = 0.08;
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+            if (navigator.vibrate) navigator.vibrate(40);
+        }
 
-    window.payQR = function() {
-      const total = Object.values(window.order).reduce((s, i) => s + i.price * i.quantity, 0);
-      document.getElementById("qrAmount").innerText = total;
-      showPopup("qrPopup");
-    }
+        function playError() {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = "sawtooth";
+            osc.frequency.value = 180;
+            gain.gain.value = 0.12;
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.25);
+            if (navigator.vibrate) navigator.vibrate([100, 60, 100]);
+        }
 
-    window.confirmQR = function() {
-      closeAllPopups();
-      alert("📱 ชำระเงินผ่าน QR สำเร็จ!");
-      window.order = {};
-      updateCart();
-    }
+        // ให้ทุกปุ่มมีเสียงคลิก
+        document.addEventListener("DOMContentLoaded", () => {
+            document.querySelectorAll("button,a").forEach(el => {
+                el.addEventListener("click", playClick);
+            });
+        });
 
-    // Load menu on page load
-    loadMenu();
-  </script>
+        // เสียงตอนแจ้งเตือน error
+        const _alert = window.alert;
+        window.alert = function (msg) {
+            playError();
+            _alert(msg);
+        };
+    </script>
 
-  <script>
-    function playClick() {
-      try {
-        const s = document.getElementById("clickSound");
-        s.currentTime = 0;
-        s.play().catch(e => console.log("Audio play failed:", e));
-      } catch (e) {
-        // Ignore audio errors
-      }
-    }
-    
-    function goHome() {
-      window.location.href = "index.html";
-    }
-    
-    function goBack() {
-      window.history.back();
-    }
-    
-    function showPopup(id) {
-      document.getElementById("overlay").style.display = "block";
-      document.getElementById(id).style.display = "block";
-    }
-    
-    function closeAllPopups() {
-      document.getElementById("overlay").style.display = "none";
-      document.querySelectorAll(".popup").forEach(p => p.style.display = "none");
-    }
-    
-    function appendCash(v) {
-      const el = document.getElementById("cashInput");
-      el.value += v;
-    }
-    
-    function clearCash() {
-      document.getElementById("cashInput").value = "";
-      document.getElementById("changeDisplay").innerText = "";
-    }
-    
-    function closeCart() {
-      document.getElementById("orderSummary").style.display = "none";
-    }
-    
-    function cancelOrder() {
-      if (confirm("ยืนยันที่จะยกเลิกรายการทั้งหมด?")) {
-        window.order = {};
-        updateCart();
-        closeCart();
-      }
-    }
-  </script>
+
+    <script>
+        document.addEventListener("click", () => {
+            try {
+                if (typeof audioCtx !== "undefined" && audioCtx.state === "suspended") {
+                    audioCtx.resume();
+                } else if (typeof initAudio === "function" && (!audioCtx || audioCtx.state !== "running")) {
+                    initAudio();
+                }
+            } catch (e) {
+                console.warn("Audio init/resume failed:", e);
+            }
+        }, { once: true });
+    </script>
+
+    <div id="cartButton" class="cart-button" onclick="showCart()">
+        🛒 <span id="cartCount">0</span>
+    </div>
+
 </body>
+
 </html>
