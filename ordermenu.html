@@ -987,29 +987,31 @@
                 throw receiptError;
             }
 
-            // 2.2. บันทึกเข้าตาราง receipt_items
-            const receiptId = receipt.id;
-            const itemsToInsert = Object.keys(order).map(itemName => {
-                const item = order[itemName];
-                
-                // **🛑 การตรวจสอบและดึง menu_id อย่างรอบคอบ**
-                const menuInfo = menuMap[itemName];
-                const finalMenuId = (menuInfo && typeof menuInfo.id !== 'undefined' && menuInfo.id !== null) ? menuInfo.id : item.menu_id;
+           // 2.2. บันทึกเข้าตาราง receipt_items
+const receiptId = receipt.id;
 
-                if (typeof finalMenuId === 'undefined' || finalMenuId === null) {
-                     console.error(`❌ ข้ามรายการ: ${itemName} เพราะไม่พบ menu_id ที่ถูกต้อง (menuMap หรือ order object ว่างเปล่า?)`);
-                     // **สำคัญ:** หากหา ID ไม่ได้ ต้องข้ามรายการนี้ไป
-                     return null; 
-                }
+const itemsToInsert = Object.keys(order).map(itemName => {
+    const item = order[itemName];
 
-                return {
-  receipt_id: Number(receiptId),
-  menu_id: Number(finalMenuId),
-  item_name: itemName,
-  price_per_unit: Number(item.price),
-  quantity: Number(item.quantity),
-  total_price: Number(item.price * item.quantity)
-};
+    // **ตรวจสอบ menu_id**
+    const menuInfo = menuMap[itemName];
+    const finalMenuId = (menuInfo && menuInfo.id) ? menuInfo.id : item.menu_id;
+
+    if (!finalMenuId) {
+        console.error(`❌ ข้ามรายการ: ${itemName} เพราะไม่พบ menu_id ที่ถูกต้อง`);
+        return null;
+    }
+
+    return {
+        receipt_id: receiptId,          // ❗ อย่าแปลงเป็น Number ถ้าเป็น UUID
+        menu_id: finalMenuId,           // ❗ UUID ห้าม Number()
+        item_name: itemName,
+        price_per_unit: Number(item.price),
+        quantity: Number(item.quantity),
+        total_price: Number(item.price) * Number(item.quantity),
+    };
+});
+ 
 
             }).filter(item => item !== null); // กรองรายการที่เป็น null ออกไป
 
