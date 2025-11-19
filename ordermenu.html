@@ -993,7 +993,7 @@ const receiptId = receipt.id;
 const itemsToInsert = Object.keys(order).map(itemName => {
     const item = order[itemName];
 
-    // **ตรวจสอบ menu_id**
+    // ตรวจสอบ menu_id
     const menuInfo = menuMap[itemName];
     const finalMenuId = (menuInfo && menuInfo.id) ? menuInfo.id : item.menu_id;
 
@@ -1003,16 +1003,15 @@ const itemsToInsert = Object.keys(order).map(itemName => {
     }
 
     return {
-        receipt_id: receiptId,          // ❗ อย่าแปลงเป็น Number ถ้าเป็น UUID
-        menu_id: finalMenuId,           // ❗ UUID ห้าม Number()
+        receipt_id: receiptId,
+        menu_id: finalMenuId,
         item_name: itemName,
         price_per_unit: Number(item.price),
         quantity: Number(item.quantity),
-        total_price: Number(item.price) * Number(item.quantity),
+        total_price: Number(item.price) * Number(item.quantity)
     };
- 
+}).filter(item => item !== null);     // ← ต้องอยู่ภายนอก map แบบนี้
 
-            }).filter(item => item !== null); // กรองรายการที่เป็น null ออกไป
 
             // **🛑 ป้องกันกรณี itemsToInsert เป็นอาร์เรย์ว่าง**
             if (itemsToInsert.length === 0) {
