@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>JOKJUNG POS - Login</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
   <style>
     body {
       margin: 0;
@@ -93,6 +96,11 @@
   </div>
 
   <script>
+    // 1. กำหนดค่า Supabase (ใช้ค่าเดียวกับ Backoffice)
+    const SUPABASE_URL = 'https://pujxykbpxsncbrlquaxo.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1anh5a2JweHNuY2JybHF1YXhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3OTI0OTIsImV4cCI6MjA3ODM2ODQ5Mn0.JxavkquEZo0W7NME4CJ01GbLKR0_gYFdcKy2BWCrAso';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
     let pin = "";
 
     function appendNumber(num) {
@@ -107,25 +115,58 @@
       document.getElementById("pinDisplay").innerText = "";
     }
 
-    function login() {
-      fetch("https://script.google.com/macros/s/AKfycbzY9gDX-lBW8lg9nAS5XJ40beHLLMki9UcPe9QyLPlir7Zl1v1bAzgxzyWCIBFBSDNm/exec", {
-        method: "POST",
-        mode: "no-cors",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ pin: pin })
-      })
-      .then(() => {
-        // ✅ ไม่สามารถรู้ผลจาก server ได้ ให้เดาว่าถูก และไปหน้า menu
-        window.location.href = "./menu.html";
-      })
-      .catch(err => {
-        alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
-        console.error(err);
-      });
-    }
+    /**
+     * ฟังก์ชันเข้าสู่ระบบด้วย PIN 6 หลัก โดยดึงข้อมูลจากตาราง 'staff'
+     */
+    async function login() {
+      if (pin.length !== 6) {
+        alert("กรุณากรอกรหัส PIN ให้ครบ 6 หลัก");
+        clearPin();
+        return;
+      }
+      
+      // 1. ดึงข้อมูลพนักงานจากตาราง 'staff' โดยใช้ PIN
+      try {
+        const { data, error } = await supabaseClient
+            .from('staff')
+            .select('id, name, branch_id, staff_id') 
+            .eq('login_pin', pin) // <--- คอลัมน์ที่เก็บ PIN 6 หลัก (ต้องมีในตาราง staff)
+            .single();
 
+        if (error && error.code !== 'PGRST116') { // PGRST116 คือ Error เมื่อไม่พบข้อมูล
+            throw error;
+        }
+
+        if (data) {
+          // 2. ถ้าพบพนักงาน: บันทึกข้อมูลที่สำคัญลง Local Storage สำหรับใช้ใน POS
+          const staffInfo = {
+            staff_uuid: data.id,       // UUID ของพนักงาน (ใช้เป็น Foreign Key ใน receipts)
+            staff_name: data.name,
+            branch_id: data.branch_id, // Branch ID (UUID)
+            staff_code: data.staff_id, // รหัส S-XXXX (สำหรับแสดงผล)
+          };
+          
+          localStorage.setItem('pos_staff_session', JSON.stringify(staffInfo));
+          
+          alert(`เข้าสู่ระบบสำเร็จ! ยินดีต้อนรับ ${data.name}`);
+          
+          // 3. ไปหน้าเมนู
+          window.location.href = "./menu.html";
+
+        } else {
+          // ไม่พบพนักงาน
+          alert("รหัส PIN ไม่ถูกต้องหรือไม่พบข้อมูลพนักงาน");
+          clearPin();
+        }
+
+      } catch (err) {
+        console.error("Login Error:", err);
+        alert(`เกิดข้อผิดพลาดในการตรวจสอบ PIN: ${err.message}`);
+        clearPin();
+      }
+    }
+    
+    // ฟังก์ชันแสดงวัน-เวลา เหมือนเดิม
     function updateDateTime() {
       const now = new Date();
       const date = now.toLocaleDateString('th-TH', {
