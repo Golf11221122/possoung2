@@ -1155,7 +1155,7 @@
                 <div style="text-align:left; font-size:0.9rem;">
                     วิธีชำระ: ${method}<br>
                     ${method === 'เงินสด' ? `ชำระมา: ${paid.toFixed(2)} ฿<br>เงินทอน: ${change.toFixed(2)} ฿<br>` : ''}
-                    วันที่: ${new Date().toLocaleString('th-TH')}
+                    วันที่: ${new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })}
                 </div>
                 <div style="text-align:right; font-size:0.9rem;">
                     ยอดรวม (รวมภาษี): ${subtotal.toFixed(2)} ฿<br>
