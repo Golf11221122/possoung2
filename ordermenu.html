@@ -597,6 +597,24 @@
         const { createClient } = window.supabase;
         const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // 🚩 START: 1. เพิ่มโค้ดสำหรับโหลด Staff Session (สำคัญ)
+        let staffSession = null;
+        try {
+            const sessionData = localStorage.getItem('pos_staff_session');
+            if (sessionData) {
+                staffSession = JSON.parse(sessionData);
+                if (!staffSession.staff_uuid || !staffSession.branch_id) {
+                    // หากไม่มี staff_uuid หรือ branch_id อาจจะแจ้งเตือนหรือตั้งค่า default
+                    console.warn("ข้อมูลเซสชันพนักงานไม่สมบูรณ์ (staff_uuid/branch_id หายไป)"); 
+                }
+            } else {
+                console.log("No staff session found. Running as unauthenticated/default user.");
+            }
+        } catch (e) {
+            console.error("Failed to load staff session:", e);
+        }
+        // 🚩 END: 1. เพิ่มโค้ดสำหรับโหลด Staff Session
+
         let order = {};
         let discountPercent = 0;
         let menuMap = {};
@@ -955,21 +973,25 @@
 
             // 2.1. บันทึกเข้าตาราง receipts ก่อน 
             const receiptData = {
-  store_name: "ชายสี่บะหมี่เกี๊ยว กอล์ฟบ้านไผ่",                 // ✅ ใส่ชื่อร้าน
-  store_address: "ที่อยู่ 95/7 ม.7 ต.ในเมือง อ.บ้านไผ่ จ.ขอนแก่น 40110",   // ✅ (ใส่จริงหรือตั้ง default ได้)
-  store_tax_id: "1409700103387",         // ✅ ถ้ามี
-  store_phone: "082-3804188",           // ✅ ถ้ามี
-  table_number: tableNumber,
-  order_type: orderType,
-  customer_count: customerCount,
-  discount_percent: discountPercent,
-  subtotal: subtotal,
-  discount_amount: discount,
-  total_before_tax: beforeVat,
-  tax_amount: vatAmount,
-  total_amount: total,
-  payment_method: method
-};
+                store_name: "ชายสี่บะหมี่เกี๊ยว กอล์ฟบ้านไผ่",                 // ✅ ใส่ชื่อร้าน
+                store_address: "ที่อยู่ 95/7 ม.7 ต.ในเมือง อ.บ้านไผ่ จ.ขอนแก่น 40110",   // ✅ (ใส่จริงหรือตั้ง default ได้)
+                store_tax_id: "1409700103387",         // ✅ ถ้ามี
+                store_phone: "082-3804188",           // ✅ ถ้ามี
+                table_number: tableNumber,
+                order_type: orderType,
+                customer_count: customerCount,
+                discount_percent: discountPercent,
+                subtotal: subtotal,
+                discount_amount: discount,
+                total_before_tax: beforeVat,
+                tax_amount: vatAmount,
+                total_amount: total,
+                payment_method: method,
+                // 🚩 START: 2. เพิ่ม staff_uuid และ branch_id ใน receipts
+                staff_uuid: staffSession ? staffSession.staff_uuid : null,
+                branch_id: staffSession ? staffSession.branch_id : null
+                // 🚩 END: 2. เพิ่ม staff_uuid และ branch_id ใน receipts
+            };
 
 
             const {
@@ -988,29 +1010,29 @@
             }
 
            // 2.2. บันทึกเข้าตาราง receipt_items
-const receiptId = receipt.id;
+            const receiptId = receipt.id;
 
-const itemsToInsert = Object.keys(order).map(itemName => {
-    const item = order[itemName];
+            const itemsToInsert = Object.keys(order).map(itemName => {
+                const item = order[itemName];
 
-    // ตรวจสอบ menu_id
-    const menuInfo = menuMap[itemName];
-    const finalMenuId = (menuInfo && menuInfo.id) ? menuInfo.id : item.menu_id;
+                // ตรวจสอบ menu_id
+                const menuInfo = menuMap[itemName];
+                const finalMenuId = (menuInfo && menuInfo.id) ? menuInfo.id : item.menu_id;
 
-    if (!finalMenuId) {
-        console.error(`❌ ข้ามรายการ: ${itemName} เพราะไม่พบ menu_id ที่ถูกต้อง`);
-        return null;
-    }
+                if (!finalMenuId) {
+                    console.error(`❌ ข้ามรายการ: ${itemName} เพราะไม่พบ menu_id ที่ถูกต้อง`);
+                    return null;
+                }
 
-    return {
-        receipt_id: receiptId,
-        menu_id: finalMenuId,
-        item_name: itemName,
-        price_per_unit: Number(item.price),
-        quantity: Number(item.quantity),
-        total_price: Number(item.price) * Number(item.quantity)
-    };
-}).filter(item => item !== null);     // ← ต้องอยู่ภายนอก map แบบนี้
+                return {
+                    receipt_id: receiptId,
+                    menu_id: finalMenuId,
+                    item_name: itemName,
+                    price_per_unit: Number(item.price),
+                    quantity: Number(item.quantity),
+                    total_price: Number(item.price) * Number(item.quantity)
+                };
+            }).filter(item => item !== null);     // ← ต้องอยู่ภายนอก map แบบนี้
 
 
             // **🛑 ป้องกันกรณี itemsToInsert เป็นอาร์เรย์ว่าง**
@@ -1082,9 +1104,17 @@ const itemsToInsert = Object.keys(order).map(itemName => {
             const tableNumber = localStorage.getItem("tableNumber") || "N/A";
             closeAllPopups();
 
+            // 🚩 START: 3. เพิ่มโค้ดเพื่อดึงข้อมูลพนักงานสำหรับแสดงผล
+            const staffName = staffSession && staffSession.staff_name ? staffSession.staff_name : 'ไม่ระบุพนักงาน';
+            const staffDisplayCode = staffSession && staffSession.staff_code ? `(${staffSession.staff_code})` : '';
+            // 🚩 END: 3. เพิ่มโค้ดเพื่อดึงข้อมูลพนักงานสำหรับแสดงผล
+
             let html = `
             <div style="margin-bottom:10px; font-weight:600;">
                 🍽️ ${orderType} | 👥 ${customerCount} คน | 🪑 โต๊ะ ${tableNumber}
+            </div>
+            <div style="text-align:center; font-size:0.95rem; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px dashed rgba(0, 0, 0, 0.15);">
+                พนักงาน: ${staffName} ${staffDisplayCode}
             </div>
             <table class="receipt-table">
                 <tr>
